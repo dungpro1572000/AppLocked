@@ -1,29 +1,59 @@
-package com.dungz.applocker.ui.screens
+package com.dungz.applocker.ui.screens.settings
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.PrivacyTip
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
-import com.dungz.applocker.ui.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: MainViewModel = hiltViewModel()
+    viewModel: SettingViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    var showChangePasswordDialog by remember { mutableStateOf(false) }
-    var showEmergencyPasswordDialog by remember { mutableStateOf(false) }
+    val uiState = viewModel.state.collectAsState()
 
     Scaffold(
         topBar = {
@@ -52,34 +82,34 @@ fun SettingsScreen(
                             icon = Icons.Default.Lock,
                             title = "Change Password",
                             subtitle = "Update your app password",
-                            onClick = { showChangePasswordDialog = true }
+                            onClick = { viewModel.updateShowChangePasswordDialog(true) }
                         )
-                        
+
                         SettingsItem(
                             icon = Icons.Default.Security,
                             title = "Emergency Password",
-                            subtitle = if (uiState.securitySettings.isEmergencyPasswordSet) {
+                            subtitle = if (uiState.value.securitySettings.isEmergencyPasswordSet) {
                                 "Emergency password is set"
                             } else {
                                 "Set emergency password"
                             },
-                            onClick = { showEmergencyPasswordDialog = true }
+                            onClick = { viewModel.updateShowEmergencyPasswordDialog(true) }
                         )
-                        
+
                         SettingsItem(
                             icon = Icons.Default.Fingerprint,
                             title = "Biometric Authentication",
                             subtitle = "Use fingerprint or face unlock",
                             trailing = {
                                 Switch(
-                                    checked = uiState.securitySettings.isBiometricEnabled,
+                                    checked = uiState.value.securitySettings.isBiometricEnabled,
                                     onCheckedChange = { /* TODO: Implement biometric toggle */ }
                                 )
                             }
                         )
                     }
                 }
-                
+
                 item {
                     SettingsSection(title = "App Management") {
                         SettingsItem(
@@ -87,21 +117,21 @@ fun SettingsScreen(
                             title = "Unlock All Apps",
                             subtitle = "Remove protection from all apps",
                             onClick = {
-                                // TODO: Implement unlock all apps
+                                viewModel.unLockAllApps()
                             }
                         )
-                        
+
                         SettingsItem(
                             icon = Icons.Default.Delete,
                             title = "Clear All Data",
                             subtitle = "Remove all passwords and locked apps",
                             onClick = {
-                                // TODO: Implement clear all data
+                                viewModel.clearAllData()
                             }
                         )
                     }
                 }
-                
+
                 item {
                     SettingsSection(title = "About") {
                         SettingsItem(
@@ -109,7 +139,7 @@ fun SettingsScreen(
                             title = "App Version",
                             subtitle = "1.0.0"
                         )
-                        
+
                         SettingsItem(
                             icon = Icons.Default.PrivacyTip,
                             title = "Privacy Policy",
@@ -123,23 +153,23 @@ fun SettingsScreen(
             }
         }
     }
-    
-    if (showChangePasswordDialog) {
+
+    if (uiState.value.isShowChangePasswordDialog) {
         ChangePasswordDialog(
-            onDismiss = { showChangePasswordDialog = false },
+            onDismiss = { viewModel.updateShowChangePasswordDialog(false) },
             onConfirm = { newPassword ->
-                viewModel.setPassword(newPassword)
-                showChangePasswordDialog = false
+                viewModel.updatePassword(newPassword)
+                viewModel.updateShowChangePasswordDialog(false)
             }
         )
     }
-    
-    if (showEmergencyPasswordDialog) {
+
+    if (uiState.value.isShowEmergencyPasswordDialog) {
         EmergencyPasswordDialog(
-            onDismiss = { showEmergencyPasswordDialog = false },
+            onDismiss = { viewModel.updateShowEmergencyPasswordDialog(false) },
             onConfirm = { emergencyPassword ->
-                viewModel.setEmergencyPassword(emergencyPassword)
-                showEmergencyPasswordDialog = false
+                viewModel.updateEmergencyPassword(emergencyPassword)
+                viewModel.updateShowEmergencyPasswordDialog(false)
             }
         )
     }
@@ -162,21 +192,21 @@ private fun SettingsSection(
                 vertical = Dimen.paddingSmall
             )
         )
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = Dimen.elevationSmall)
         ) {
             content()
         }
-        
+
         Spacer(modifier = Modifier.height(Dimen.spacingMedium))
     }
 }
 
 @Composable
 private fun SettingsItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     onClick: (() -> Unit)? = null,
@@ -199,9 +229,9 @@ private fun SettingsItem(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(Dimen.iconSizeMedium)
             )
-            
+
             Spacer(modifier = Modifier.width(Dimen.spacingMedium))
-            
+
             Column(
                 modifier = Modifier.weight(1f)
             ) {
@@ -209,14 +239,14 @@ private fun SettingsItem(
                     text = title,
                     style = MaterialTheme.typography.titleSmall
                 )
-                
+
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             trailing?.invoke()
         }
     }
@@ -238,26 +268,26 @@ private fun ChangePasswordDialog(
             Column {
                 OutlinedTextField(
                     value = newPassword,
-                    onValueChange = { 
+                    onValueChange = {
                         newPassword = it
                         error = null
                     },
                     label = { Text("New Password") },
                     singleLine = true
                 )
-                
+
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-                
+
                 OutlinedTextField(
                     value = confirmPassword,
-                    onValueChange = { 
+                    onValueChange = {
                         confirmPassword = it
                         error = null
                     },
                     label = { Text("Confirm Password") },
                     singleLine = true
                 )
-                
+
                 error?.let { errorMessage ->
                     Spacer(modifier = Modifier.height(Dimen.spacingMedium))
                     Text(
@@ -275,9 +305,11 @@ private fun ChangePasswordDialog(
                         newPassword.length < 4 -> {
                             error = "Password must be at least 4 characters"
                         }
+
                         newPassword != confirmPassword -> {
                             error = "Passwords do not match"
                         }
+
                         else -> {
                             onConfirm(newPassword)
                         }
@@ -314,31 +346,31 @@ private fun EmergencyPasswordDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-                
+
                 OutlinedTextField(
                     value = emergencyPassword,
-                    onValueChange = { 
+                    onValueChange = {
                         emergencyPassword = it
                         error = null
                     },
                     label = { Text("Emergency Password") },
                     singleLine = true
                 )
-                
+
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-                
+
                 OutlinedTextField(
                     value = confirmPassword,
-                    onValueChange = { 
+                    onValueChange = {
                         confirmPassword = it
                         error = null
                     },
                     label = { Text("Confirm Password") },
                     singleLine = true
                 )
-                
+
                 error?.let { errorMessage ->
                     Spacer(modifier = Modifier.height(Dimen.spacingMedium))
                     Text(
@@ -356,9 +388,11 @@ private fun EmergencyPasswordDialog(
                         emergencyPassword.length < 4 -> {
                             error = "Password must be at least 4 characters"
                         }
+
                         emergencyPassword != confirmPassword -> {
                             error = "Passwords do not match"
                         }
+
                         else -> {
                             onConfirm(emergencyPassword)
                         }

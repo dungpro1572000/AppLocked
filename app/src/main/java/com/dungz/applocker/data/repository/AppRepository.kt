@@ -14,6 +14,7 @@ interface AppRepository {
     suspend fun unlockAllApps()
     suspend fun getSecuritySettings(): SecuritySettings
     suspend fun saveSecuritySettings(settings: SecuritySettings)
+    suspend fun deleteAllSecuritySettings()
     suspend fun validatePassword(password: String): Boolean
     suspend fun validateEmergencyPassword(password: String): Boolean
     suspend fun setEmergencyUnlock()

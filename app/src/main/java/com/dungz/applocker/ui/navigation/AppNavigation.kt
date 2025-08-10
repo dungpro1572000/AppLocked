@@ -5,7 +5,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.dungz.applocker.ui.screens.*
+import com.dungz.applocker.ui.screens.appselection.AppSelectionScreen
+import com.dungz.applocker.ui.screens.emergencypasswordsetup.EmergencyPasswordSetupScreen
 import com.dungz.applocker.ui.screens.passwordsetup.PasswordSetupScreen
+import com.dungz.applocker.ui.screens.settings.SettingsScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {

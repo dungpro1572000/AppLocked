@@ -3,11 +3,12 @@ package com.dungz.applocker.di
 import android.content.Context
 import com.dungz.applocker.data.database.AppDatabase
 import com.dungz.applocker.data.database.LockedAppDao
+import com.dungz.applocker.data.datastore.AppDataStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
@@ -24,5 +25,11 @@ object DatabaseModule {
     @Singleton
     fun provideLockedAppDao(appDatabase: AppDatabase): LockedAppDao {
         return appDatabase.lockedAppDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDataStore(@ApplicationContext context: Context): AppDataStore {
+        return AppDataStore(context)
     }
 }

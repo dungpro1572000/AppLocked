@@ -3,26 +3,22 @@ package com.dungz.applocker.data.repository
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.*
-import androidx.datastore.preferences.preferencesDataStore
 import com.dungz.applocker.data.database.LockedAppDao
+import com.dungz.applocker.data.datastore.AppDataStore
 import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.model.LockedApp
 import com.dungz.applocker.data.model.SecuritySettings
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "security_settings")
 
 @Singleton
 class AppRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val lockedAppDao: LockedAppDao
+    private val lockedAppDao: LockedAppDao,
+    private val dataStore: AppDataStore,
 ) : AppRepository {
 
     private val packageManager: PackageManager = context.packageManager
@@ -34,7 +30,7 @@ class AppRepositoryImpl @Inject constructor(
                 val appName = appInfo.loadLabel(packageManager).toString()
                 val appIcon = appInfo.loadIcon(packageManager)
                 val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                
+
                 AppInfo(
                     packageName = appInfo.packageName,
                     appName = appName,
@@ -72,30 +68,16 @@ class AppRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getSecuritySettings(): SecuritySettings {
-        val preferences = context.dataStore.data.first()
-        return SecuritySettings(
-            isPasswordSet = preferences[booleanPreferencesKey("is_password_set")] ?: false,
-            password = preferences[stringPreferencesKey("password")] ?: "",
-            emergencyPassword = preferences[stringPreferencesKey("emergency_password")] ?: "",
-            isEmergencyPasswordSet = preferences[booleanPreferencesKey("is_emergency_password_set")] ?: false,
-            emergencyUnlockUntil = preferences[longPreferencesKey("emergency_unlock_until")] ?: 0L,
-            failedAttempts = preferences[intPreferencesKey("failed_attempts")] ?: 0,
-            lastFailedAttempt = preferences[longPreferencesKey("last_failed_attempt")] ?: 0L,
-            isBiometricEnabled = preferences[booleanPreferencesKey("is_biometric_enabled")] ?: false
-        )
+        val data = dataStore.getSecuritySettings()
+        return data
     }
 
     override suspend fun saveSecuritySettings(settings: SecuritySettings) {
-        context.dataStore.edit { preferences ->
-            preferences[booleanPreferencesKey("is_password_set")] = settings.isPasswordSet
-            preferences[stringPreferencesKey("password")] = settings.password
-            preferences[stringPreferencesKey("emergency_password")] = settings.emergencyPassword
-            preferences[booleanPreferencesKey("is_emergency_password_set")] = settings.isEmergencyPasswordSet
-            preferences[longPreferencesKey("emergency_unlock_until")] = settings.emergencyUnlockUntil
-            preferences[intPreferencesKey("failed_attempts")] = settings.failedAttempts
-            preferences[longPreferencesKey("last_failed_attempt")] = settings.lastFailedAttempt
-            preferences[booleanPreferencesKey("is_biometric_enabled")] = settings.isBiometricEnabled
-        }
+        dataStore.saveSecuritySettings(settings)
+    }
+
+    override suspend fun deleteAllSecuritySettings() {
+        dataStore.deleteDataStore()
     }
 
     override suspend fun validatePassword(password: String): Boolean {

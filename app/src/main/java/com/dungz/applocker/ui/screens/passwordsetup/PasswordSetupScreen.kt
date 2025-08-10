@@ -26,6 +26,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.navigation.Screen
@@ -181,4 +182,4 @@ fun PasswordSetupScreen(
             Text("Set Emergency Password (Optional)")
         }
     }
-} 
+}

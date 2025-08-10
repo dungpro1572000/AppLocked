@@ -102,16 +102,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun toggleAppLock(appInfo: AppInfo) {
-        viewModelScope.launch {
-            if (appInfo.isLocked) {
-                appRepository.unlockApp(appInfo.packageName)
-            } else {
-                appRepository.lockApp(appInfo)
-            }
-        }
-    }
-
     fun shouldTakePhoto(): Boolean {
         return _uiState.value.securitySettings.failedAttempts >= 3
     }

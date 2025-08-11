@@ -1,6 +1,8 @@
 package com.dungz.applocker.util
 
 import android.Manifest
+import android.app.Activity
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -19,31 +21,50 @@ class PermissionHelper @Inject constructor(
 
     fun getRequiredPermissions(): List<String> {
         val permissions = mutableListOf<String>()
-        
+
         // Camera permission for photo capture
         permissions.add(Manifest.permission.CAMERA)
-        
+
         // Storage permissions for saving photos
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         }
-        
+
         // Notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
         }
-        
+
         return permissions
     }
 
-    fun requestUsageStatsPermission(activity: FragmentActivity, onResult: (Boolean) -> Unit) {
+    fun requestUsageStatsPermission(activity: Activity, onResult: (Boolean) -> Unit) {
         val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
         activity.startActivity(intent)
-        
+
         // Note: In a real app, you would need to check if the permission was granted
         // This is a simplified implementation
         onResult(true)
+    }
+
+    fun hasUsageStatsPermission(): Boolean {
+        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                context.applicationInfo.uid,
+                context.packageName
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                context.applicationInfo.uid,
+                context.packageName
+            )
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     fun requestOverlayPermission(activity: FragmentActivity, onResult: (Boolean) -> Unit) {
@@ -56,7 +77,7 @@ class PermissionHelper @Inject constructor(
                 activity.startActivity(intent)
             }
         }
-        
+
         // Note: In a real app, you would need to check if the permission was granted
         onResult(true)
     }

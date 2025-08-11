@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import com.dungz.applocker.ui.screens.*
 import com.dungz.applocker.ui.screens.appselection.AppSelectionScreen
 import com.dungz.applocker.ui.screens.emergencypasswordsetup.EmergencyPasswordSetupScreen
+import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptScreen
 import com.dungz.applocker.ui.screens.passwordsetup.PasswordSetupScreen
 import com.dungz.applocker.ui.screens.settings.SettingsScreen
 
@@ -14,7 +15,7 @@ import com.dungz.applocker.ui.screens.settings.SettingsScreen
 fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screen.SecurityCheck.route
+        startDestination = Screen.AppSelection.route
     ) {
         composable(Screen.SecurityCheck.route) {
             SecurityCheckScreen(navController)

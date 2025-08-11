@@ -3,6 +3,8 @@ package com.dungz.applocker.data.repository
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
 import com.dungz.applocker.data.database.LockedAppDao
 import com.dungz.applocker.data.datastore.AppDataStore
 import com.dungz.applocker.data.model.AppInfo
@@ -24,23 +26,48 @@ class AppRepositoryImpl @Inject constructor(
     private val packageManager: PackageManager = context.packageManager
 
     override fun getAllInstalledApps(): List<AppInfo> {
-        val installedApps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
-        return installedApps.mapNotNull { appInfo ->
-            try {
-                val appName = appInfo.loadLabel(packageManager).toString()
-                val appIcon = appInfo.loadIcon(packageManager)
-                val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-
-                AppInfo(
-                    packageName = appInfo.packageName,
-                    appName = appName,
-                    appIcon = appIcon,
-                    isSystemApp = isSystemApp
-                )
-            } catch (e: Exception) {
-                null
+        val packageManager = context.packageManager
+        val apps = mutableListOf<AppInfo>()
+        try {
+            val packages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstalledPackages(0)
             }
-        }.sortedBy { it.appName }
+
+            for (packageInfo in packages) {
+                try {
+                    val applicationInfo = packageInfo.applicationInfo
+                    if (applicationInfo != null) {
+                        val appName = applicationInfo.loadLabel(packageManager).toString()
+                        val packageName = applicationInfo.packageName
+                        val icon = applicationInfo.loadIcon(packageManager)
+
+                        val isSystemApp =
+                            (applicationInfo.flags.and(ApplicationInfo.FLAG_SYSTEM)) != 0
+
+                        apps.add(
+                            AppInfo(
+                                packageName = packageName,
+                                appName = appName,
+                                appIcon = icon,
+                                isSystemApp = isSystemApp
+                            )
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.w(
+                        "InstalledApps",
+                        "Error processing package: ${packageInfo.packageName}",
+                        e
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("InstalledApps", "Error getting installed packages", e)
+        }
+        return apps.sortedBy { it.appName }
     }
 
     override fun getLockedApps(): Flow<List<LockedApp>> {

@@ -1,5 +1,11 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.dungz.applocker.ui.screens.appselection
 
+import android.content.Intent
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,24 +36,56 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.data.model.AppInfo
+import com.dungz.applocker.ui.components.DismissPermissionDialog
+import com.dungz.applocker.ui.components.SystemAlertWindowPermissionDialog
+import com.dungz.applocker.ui.components.UsageStatsPermissionDialog
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSelectionScreen(
     navController: NavController,
     viewModel: AppSelectionViewModel = hiltViewModel()
 ) {
+
     val state = viewModel.state.collectAsState()
+    val context = LocalContext.current
+    val launcherSystemOverlayWindow =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (!viewModel.isOverlayPermissionGrant()) {
+                viewModel.updateIsShowDenyPermissionDialog(true)
+            } else {
+                viewModel.updateIsShowSystemWindowAlertPermissionDialog(false)
+            }
+        }
+
+    val launcherUsageStat =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (!viewModel.isUsageStatsPermissionGrant()) {
+                viewModel.updateIsShowDenyPermissionDialog(true)
+            } else {
+                viewModel.updateIsShowUsageStatsPermissionDialog(false)
+            }
+        }
+    LaunchedEffect(key1 = Unit) {
+        if (!viewModel.isOverlayPermissionGrant()) {
+            viewModel.updateIsShowSystemWindowAlertPermissionDialog(true)
+        }
+        if (!viewModel.isUsageStatsPermissionGrant()) {
+            viewModel.updateIsShowUsageStatsPermissionDialog(true)
+        }
+    }
 
     val filteredApps =
         remember(state.value.listLockedApp, state.value.searchApp, state.value.isShowSystemApp) {
@@ -59,6 +97,35 @@ fun AppSelectionScreen(
                 matchesSearch && matchesSystemFilter
             }
         }
+
+    if (state.value.isShowDenyPermissionDialog) {
+        DismissPermissionDialog(
+            onDismiss = {
+                viewModel.updateIsShowDenyPermissionDialog(false)
+            }
+        )
+    }
+    if (state.value.isShowUsageStatsPermissionDialog) {
+        UsageStatsPermissionDialog(onGrantPermission = {
+            // Tạo Intent để chuyển người dùng đến màn hình cài đặt của ứng dụng
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            launcherUsageStat.launch(intent)
+        }) {
+            viewModel.updateIsShowUsageStatsPermissionDialog(false)
+        }
+    }
+
+    if (state.value.isShowSystemWindowAlertPermissionDialog) {
+        SystemAlertWindowPermissionDialog(onGrantPermission = {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                "package:${context.packageName}".toUri()
+            )
+            launcherSystemOverlayWindow.launch(intent)
+        }) {
+            viewModel.updateIsShowSystemWindowAlertPermissionDialog(false)
+        }
+    }
 
     Scaffold(
         topBar = {

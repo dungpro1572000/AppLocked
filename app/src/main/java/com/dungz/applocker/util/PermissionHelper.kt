@@ -1,15 +1,14 @@
 package com.dungz.applocker.util
 
 import android.Manifest
-import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.fragment.app.FragmentActivity
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.result.ActivityResult
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,13 +38,17 @@ class PermissionHelper @Inject constructor(
         return permissions
     }
 
-    fun requestUsageStatsPermission(activity: Activity, onResult: (Boolean) -> Unit) {
+    fun requestUsageStatsPermission(context: Context) {
         val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-        activity.startActivity(intent)
+        context.startActivity(intent)
+    }
 
-        // Note: In a real app, you would need to check if the permission was granted
-        // This is a simplified implementation
-        onResult(true)
+    fun requestOverlayPermission(launcher: ManagedActivityResultLauncher<Intent, ActivityResult>) {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            "package:${context.packageName}".toUri()
+        )
+        launcher.launch(intent)
     }
 
     fun hasUsageStatsPermission(): Boolean {
@@ -67,19 +70,12 @@ class PermissionHelper @Inject constructor(
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    fun requestOverlayPermission(activity: FragmentActivity, onResult: (Boolean) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!Settings.canDrawOverlays(context)) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:${context.packageName}")
-                )
-                activity.startActivity(intent)
-            }
+    fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(context)
+        } else {
+            true // Overlay permission is not required for versions below M
         }
-
-        // Note: In a real app, you would need to check if the permission was granted
-        onResult(true)
     }
 
     fun isUsageStatsPermissionGranted(): Boolean {
@@ -94,14 +90,5 @@ class PermissionHelper @Inject constructor(
         } else {
             true
         }
-    }
-
-    fun createPermissionLauncher(
-        activity: FragmentActivity,
-        onResult: (Map<String, Boolean>) -> Unit
-    ) = activity.registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        onResult(permissions)
     }
 } 

@@ -1,5 +1,6 @@
 package com.dungz.applocker.service
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,23 +9,37 @@ import android.app.Service
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
+import android.view.WindowManager
 import androidx.annotation.RequiresApi
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.NotificationCompat
-import com.dungz.applocker.activity.MainActivity
+import androidx.core.content.ContextCompat.getSystemService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.dungz.applocker.R
 import com.dungz.applocker.data.repository.AppRepository
+import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptScreen
+import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptViewModel
+import com.dungz.applocker.util.ToastLifecycleOwner
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.jvm.java
 
 @AndroidEntryPoint
 class AppLockService : Service() {
@@ -32,17 +47,40 @@ class AppLockService : Service() {
     private var isMonitoring = false
     private lateinit var usageStatsManager: UsageStatsManager
     private var lastCheckedTime = 0L
+    val params = WindowManager.LayoutParams(
+        WindowManager.LayoutParams.MATCH_PARENT,
+        WindowManager.LayoutParams.MATCH_PARENT,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            @Suppress("DEPRECATION")
+            WindowManager.LayoutParams.TYPE_PHONE
+        },
+        // Các cờ để cửa sổ có thể nhận sự kiện chạm và hiển thị toàn màn hình
+        // Loại bỏ cờ NOT_FOCUSABLE để màn hình có thể tương tác
+        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+        PixelFormat.TRANSLUCENT
+    )
+    var overlayView: ComposeView? = null
+    var windowManager: WindowManager? = null
+    val overlayLifecycleOwner = ToastLifecycleOwner()
+
+    @Inject
+    lateinit var appRepository: AppRepository
 
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "app_locker_channel"
-        private const val CHECK_INTERVAL = 1000L // 1 second
+        private const val CHECK_INTERVAL = 750L // 1 second
     }
 
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
-        usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel()
+        }
+        usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
+        Log.d("DungNT354", "AppLockService created")
         lastCheckedTime = System.currentTimeMillis()
     }
 
@@ -51,6 +89,7 @@ class AppLockService : Service() {
             "START_MONITORING" -> startMonitoring()
             "STOP_MONITORING" -> stopMonitoring()
         }
+        Log.d("DungNT354", "AppLockService onStartCommand called with action: ${intent?.action}")
         return START_STICKY
     }
 
@@ -77,7 +116,7 @@ class AppLockService : Service() {
 
     private fun stopMonitoring() {
         isMonitoring = false
-        stopForeground(true)
+        stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
@@ -95,15 +134,27 @@ class AppLockService : Service() {
         while (isMonitoring) {
             try {
                 val currentTime = System.currentTimeMillis()
-                val foregroundApp = getCurrentForegroundApp()
+                val foregroundApp = getForegroundApp(context = this)
+                Log.d("DungNT354", "Foreground app at $currentTime: $foregroundApp")
 
                 if (foregroundApp != null) {
                     Log.d("DungNT354", "Current foreground app: $foregroundApp")
 
                     // Check if this app is in your locked apps list
-                    if (isAppLocked(foregroundApp)) {
-                        Log.d("DungNT354", "Locked app detected: $foregroundApp")
+//                    if (isAppLocked(foregroundApp)) {
+//                        Log.d("DungNT354", "Locked app detected: $foregroundApp")
+//                        handleLockedApp(foregroundApp)
+//                    }
+
+                    if (foregroundApp == "com.google.android.youtube") {
                         handleLockedApp(foregroundApp)
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            overlayView?.let {
+                                windowManager?.removeView(overlayView)
+                                windowManager = null
+                            }
+                        }
                     }
                 }
 
@@ -116,38 +167,34 @@ class AppLockService : Service() {
         }
     }
 
-    private fun getCurrentForegroundApp(): String? {
-        val currentTime = System.currentTimeMillis()
+    fun getForegroundApp(context: Context): String? {
+        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val time = System.currentTimeMillis()
 
-        // Query usage stats for the last 10 seconds
-        val stats = usageStatsManager.queryUsageStats(
-            UsageStatsManager.INTERVAL_BEST,
-            currentTime - 10000,
-            currentTime
+        // Lấy thống kê trong 1 phút gần nhất
+        val appList = usm.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            time - 1000 * 60,
+            time
         )
 
-        if (stats.isEmpty()) {
+        if (appList.isNullOrEmpty()) {
             return null
         }
 
-        // Find the most recently used app
-        val mostRecentApp = stats.maxByOrNull { it.lastTimeUsed }
+        // Sắp xếp theo lastTimeUsed
+        val recentApp = appList.maxByOrNull { it.lastTimeUsed }
 
-        // Additional check using queryAndAggregateUsageStats for better accuracy
-        val recentStats = usageStatsManager.queryAndAggregateUsageStats(
-            currentTime - 5000,
-            currentTime
-        )
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val tasks = am.runningAppProcesses
+        val foregroundApp = tasks?.firstOrNull {
+            it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        }?.processName
 
-        // Get the app with the most recent foreground time
-        val currentApp = recentStats.maxByOrNull {
-            it.value.lastTimeUsed
-        }?.key
-
-        return currentApp ?: mostRecentApp?.packageName
+        return recentApp?.packageName.toString()
     }
 
-    private fun isAppLocked(packageName: String): Boolean {
+    private suspend fun isAppLocked(packageName: String): Boolean {
         // TODO: Implement your logic to check if app is locked
         // This could be from SharedPreferences, Room database, etc.
         // For example:
@@ -155,28 +202,74 @@ class AppLockService : Service() {
         return lockedApps.contains(packageName)
     }
 
-    private fun getLockedApps(): Set<String> {
-        // TODO: Get locked apps from your storage
-        // Example implementation:
-        val prefs = getSharedPreferences("app_locker", Context.MODE_PRIVATE)
-        return prefs.getStringSet("locked_apps", emptySet()) ?: emptySet()
+    private suspend fun getLockedApps(): List<String> {
+
+        return appRepository.getLockedApps().first().map {
+            it.packageName
+        }
     }
 
-    private fun handleLockedApp(packageName: String) {
-        // TODO: Implement your app locking logic
-        // This could involve:
-        // 1. Showing a lock screen activity
-        // 2. Bringing your app to foreground
-        // 3. Showing authentication dialog
-
-        Log.d("DungNT354", "Handling locked app: $packageName")
-
-        // Example: Launch lock screen
-        val lockIntent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("locked_package", packageName)
+    private suspend fun handleLockedApp(packageName: String) {
+        withContext(Dispatchers.Main) {
+            if (windowManager == null) {
+                windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+                createAndAddOverlayView()
+                Log.d("DungNT354", "WindowManager initialized in handleLockedApp")
+            }
+            Log.d("DungNT354", "Handling locked app: $packageName")
         }
-        startActivity(lockIntent)
+    }
+
+    private fun createAndAddOverlayView() {
+        if (overlayView == null) {
+            overlayLifecycleOwner.performRestore(null)
+            overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+            val viewModelStoreOwner = object : ViewModelStoreOwner {
+                override val viewModelStore: ViewModelStore
+                    get() = ViewModelStore()
+            }
+            val viewModel = PasswordPromptViewModel(appRepository = appRepository)
+            overlayView = ComposeView(this).apply {
+                setContent {
+                        PasswordPromptScreen(
+                            onSuccess = { },
+                            onEmergencyUnLock = { /* TODO: Implement */ },
+                            viewModel = viewModel
+                        )
+                }
+                setViewTreeLifecycleOwner(overlayLifecycleOwner)
+                setViewTreeSavedStateRegistryOwner(overlayLifecycleOwner)
+            }
+
+            // Correctly manage the lifecycle of the overlay
+
+            overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
+            overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        }
+        try {
+            windowManager?.addView(overlayView, params)
+            Log.d("DungNT354", "windowManager is null? ${windowManager == null}")
+        } catch (e: Exception) {
+            Log.e("AppLockService", "Error adding view to window manager", e)
+        }
+    }
+
+    private fun removeOverlayView() {
+        if (overlayView != null) {
+            try {
+                windowManager?.removeView(overlayView)
+                // Correct lifecycle cleanup
+                overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+                overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                overlayLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+
+                // Clear the reference
+                overlayView = null
+                Log.d("AppLockService", "Overlay view removed")
+            } catch (e: Exception) {
+                Log.e("AppLockService", "Error removing view from window manager", e)
+            }
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -206,6 +299,8 @@ class AppLockService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isMonitoring = false
+        windowManager = null
+        overlayView = null
         serviceScope.cancel()
     }
 }

@@ -1,12 +1,14 @@
 package com.dungz.applocker.ui.screens.appselection
 
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.repository.AppRepository
 import com.dungz.applocker.util.PermissionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -21,12 +23,19 @@ class AppSelectionViewModel @Inject constructor(
     val state: StateFlow<AppSelectionState> = _state
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch() {
             // Load locked apps
             appRepository.getLockedApps().collect { lockedApps ->
                 val allApps = appRepository.getAllInstalledApps()
                 val updatedApps = allApps.map { app ->
-                    app.copy(isLocked = lockedApps.any { it.packageName == app.packageName })
+                    AppSelectionInfo(
+                        packageName = app.packageName,
+                        appName = app.appName,
+                        appIcon = app.appIcon.toBitmap().asImageBitmap(),
+                        isSystemApp = app.isSystemApp,
+                        isSelected = false, // Default to false, can be updated later
+                        isLocked = lockedApps.any { it.packageName == app.packageName }
+                    )
                 }
                 _state.value = _state.value.copy(
                     listApp = updatedApps,
@@ -42,10 +51,6 @@ class AppSelectionViewModel @Inject constructor(
 
     fun updateIsShowSystemApp(value: Boolean) {
         _state.value = _state.value.copy(isShowSystemApp = value)
-    }
-
-    fun updateLockedListApp(list: List<AppInfo>) {
-        _state.value = _state.value.copy(listLockedApp = list)
     }
 
     fun updateIsShowSystemWindowAlertPermissionDialog(value: Boolean) {
@@ -66,12 +71,12 @@ class AppSelectionViewModel @Inject constructor(
         )
     }
 
-    fun toggleAppLock(appInfo: AppInfo) {
+    fun toggleAppLock(isLocked: Boolean, packageName: String, appName: String) {
         viewModelScope.launch {
-            if (appInfo.isLocked) {
-                appRepository.unlockApp(appInfo.packageName)
+            if (isLocked) {
+                appRepository.unlockApp(packageName)
             } else {
-                appRepository.lockApp(appInfo)
+                appRepository.lockApp(packageName, appName)
             }
         }
     }

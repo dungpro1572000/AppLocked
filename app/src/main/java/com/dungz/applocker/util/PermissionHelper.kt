@@ -3,12 +3,8 @@ package com.dungz.applocker.util
 import android.Manifest
 import android.app.AppOpsManager
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.provider.Settings
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.result.ActivityResult
-import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -36,19 +32,6 @@ class PermissionHelper @Inject constructor(
         }
 
         return permissions
-    }
-
-    fun requestUsageStatsPermission(context: Context) {
-        val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
-        context.startActivity(intent)
-    }
-
-    fun requestOverlayPermission(launcher: ManagedActivityResultLauncher<Intent, ActivityResult>) {
-        val intent = Intent(
-            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            "package:${context.packageName}".toUri()
-        )
-        launcher.launch(intent)
     }
 
     fun hasUsageStatsPermission(): Boolean {

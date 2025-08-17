@@ -78,10 +78,10 @@ class AppRepositoryImpl @Inject constructor(
         return lockedAppDao.isAppLocked(packageName)
     }
 
-    override suspend fun lockApp(appInfo: AppInfo) {
+    override suspend fun lockApp(packageName: String, appName: String) {
         val lockedApp = LockedApp(
-            packageName = appInfo.packageName,
-            appName = appInfo.appName
+            packageName = packageName,
+            appName = appName
         )
         lockedAppDao.insertLockedApp(lockedApp)
     }

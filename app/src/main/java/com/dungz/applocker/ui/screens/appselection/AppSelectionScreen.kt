@@ -6,7 +6,10 @@ import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -24,8 +27,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,15 +39,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dungz.applocker.data.model.AppInfo
+import com.dungz.applocker.service.AppLockService
 import com.dungz.applocker.ui.components.DismissPermissionDialog
 import com.dungz.applocker.ui.components.SystemAlertWindowPermissionDialog
 import com.dungz.applocker.ui.components.UsageStatsPermissionDialog
@@ -76,6 +79,10 @@ fun AppSelectionScreen(
                 viewModel.updateIsShowDenyPermissionDialog(true)
             } else {
                 viewModel.updateIsShowUsageStatsPermissionDialog(false)
+                val intent = Intent(context, AppLockService::class.java).apply {
+                    action = "START_MONITORING"
+                }
+                context.startService(intent)
             }
         }
     LaunchedEffect(key1 = Unit) {
@@ -84,17 +91,24 @@ fun AppSelectionScreen(
         }
         if (!viewModel.isUsageStatsPermissionGrant()) {
             viewModel.updateIsShowUsageStatsPermissionDialog(true)
+        } else if (viewModel.isUsageStatsPermissionGrant()){
+            val intent = Intent(context, AppLockService::class.java).apply {
+                action = "START_MONITORING"
+            }
+            context.startService(intent)
         }
     }
 
     val filteredApps =
         remember(state.value.listLockedApp, state.value.searchApp, state.value.isShowSystemApp) {
-            state.value.listLockedApp.filter { app ->
-                val matchesSearch =
-                    app.appName.contains(state.value.searchApp, ignoreCase = true) ||
-                            app.packageName.contains(state.value.searchApp, ignoreCase = true)
-                val matchesSystemFilter = state.value.isShowSystemApp || !app.isSystemApp
-                matchesSearch && matchesSystemFilter
+            derivedStateOf {
+                state.value.listLockedApp.filter { app ->
+                    val matchesSearch =
+                        app.appName.contains(state.value.searchApp, ignoreCase = true) ||
+                                app.packageName.contains(state.value.searchApp, ignoreCase = true)
+                    val matchesSystemFilter = state.value.isShowSystemApp || !app.isSystemApp
+                    matchesSearch && matchesSystemFilter
+                }
             }
         }
 
@@ -168,7 +182,7 @@ fun AppSelectionScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Apps (${filteredApps.size})",
+                        text = "Apps (${filteredApps.value.size})",
                         style = MaterialTheme.typography.titleMedium
                     )
 
@@ -193,10 +207,16 @@ fun AppSelectionScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(Dimen.paddingMedium)
             ) {
-                items(filteredApps) { app ->
+                items(items = filteredApps.value, key = { it.packageName }) { app ->
                     AppItem(
                         app = app,
-                        onToggleLock = { viewModel.toggleAppLock(app) }
+                        onToggleLock = {
+                            viewModel.toggleAppLock(
+                                app.isLocked,
+                                app.packageName,
+                                app.appName
+                            )
+                        }
                     )
                 }
             }
@@ -207,14 +227,14 @@ fun AppSelectionScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppItem(
-    app: AppInfo,
+    app: AppSelectionInfo,
     onToggleLock: () -> Unit
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = Dimen.spacingSmall),
-        elevation = CardDefaults.cardElevation(defaultElevation = Dimen.elevationSmall)
+            .padding(vertical = Dimen.spacingSmall)
+            .clickable { onToggleLock.invoke() },
     ) {
         Row(
             modifier = Modifier
@@ -223,13 +243,20 @@ private fun AppItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // App icon - using a placeholder for now
-            Icon(
-                imageVector = if (app.isLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                contentDescription = app.appName,
-                modifier = Modifier.size(Dimen.appIconSize),
-                tint = if (app.isLocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-            )
-
+            if (app.isLocked) {
+                Icon(
+                    modifier = Modifier.size(48.dp),
+                    imageVector = Icons.Default.Lock,
+                    tint = MaterialTheme.colorScheme.error,
+                    contentDescription = app.appName
+                )
+            } else {
+                Image(
+                    modifier = Modifier.size(48.dp),
+                    bitmap = app.appIcon,
+                    contentDescription = app.appName,
+                )
+            }
             Spacer(modifier = Modifier.width(Dimen.spacingMedium))
 
             // App info

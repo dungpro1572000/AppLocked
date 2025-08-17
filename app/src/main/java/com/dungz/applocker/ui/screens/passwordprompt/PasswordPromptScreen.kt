@@ -1,5 +1,7 @@
 package com.dungz.applocker.ui.screens.passwordprompt
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,26 +26,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.LocalAppColorScheme
 
 @Composable
 fun PasswordPromptScreen(
-    navController: NavController,
     onSuccess: () -> Unit = {},
     onEmergencyUnLock: () -> Unit = {},
     viewModel: PasswordPromptViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState()
-
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background( Color.White)
             .padding(Dimen.paddingLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -53,7 +55,7 @@ fun PasswordPromptScreen(
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center
         )
-        if (!state.value.isShowNormalPasswordView) {
+        if (state.value.isShowNormalPasswordView) {
             Spacer(modifier = Modifier.height(Dimen.spacingLarge))
 
             Text(

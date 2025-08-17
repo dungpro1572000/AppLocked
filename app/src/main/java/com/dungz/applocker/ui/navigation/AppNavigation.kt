@@ -30,7 +30,7 @@ fun AppNavigation(navController: NavHostController) {
         }
         
         composable(Screen.PasswordPrompt.route) {
-            PasswordPromptScreen(navController)
+            PasswordPromptScreen()
         }
         
         composable(Screen.Settings.route) {

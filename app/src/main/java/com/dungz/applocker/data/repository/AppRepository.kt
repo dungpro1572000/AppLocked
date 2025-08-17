@@ -9,7 +9,7 @@ interface AppRepository {
     fun getAllInstalledApps(): List<AppInfo>
     fun getLockedApps(): Flow<List<LockedApp>>
     suspend fun isAppLocked(packageName: String): Boolean
-    suspend fun lockApp(appInfo: AppInfo)
+    suspend fun lockApp(packageName: String, appName: String)
     suspend fun unlockApp(packageName: String)
     suspend fun unlockAllApps()
     suspend fun getSecuritySettings(): SecuritySettings

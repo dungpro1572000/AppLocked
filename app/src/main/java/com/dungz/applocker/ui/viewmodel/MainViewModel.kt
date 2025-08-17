@@ -1,5 +1,6 @@
 package com.dungz.applocker.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.model.AppInfo
@@ -7,7 +8,9 @@ import com.dungz.applocker.data.model.SecuritySettings
 import com.dungz.applocker.data.repository.AppRepository
 import com.dungz.applocker.util.BiometricHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,10 +30,16 @@ class MainViewModel @Inject constructor(
         loadInitialData()
     }
 
+    suspend fun isPasswordSet(): Boolean {
+        val settings = appRepository.getSecuritySettings()
+        return settings.isPasswordSet
+    }
+
     private fun loadInitialData() {
         viewModelScope.launch {
             // Load security settings
             val settings = appRepository.getSecuritySettings()
+            Log.d("DungNT3544", "Security Settings: $settings")
             _uiState.value = _uiState.value.copy(
                 securitySettings = settings,
                 isPasswordSet = settings.isPasswordSet
@@ -45,75 +54,6 @@ class MainViewModel @Inject constructor(
                 _lockedApps.value = updatedApps
             }
         }
-    }
-
-    fun checkDeviceSecurity(): Boolean {
-        return biometricHelper.isBiometricAvailable()
-    }
-
-    fun setPassword(password: String) {
-        viewModelScope.launch {
-            val settings = _uiState.value.securitySettings.copy(
-                password = password,
-                isPasswordSet = true
-            )
-            appRepository.saveSecuritySettings(settings)
-            _uiState.value = _uiState.value.copy(
-                securitySettings = settings,
-                isPasswordSet = true
-            )
-        }
-    }
-
-    fun setEmergencyPassword(password: String) {
-        viewModelScope.launch {
-            val settings = _uiState.value.securitySettings.copy(
-                emergencyPassword = password,
-                isEmergencyPasswordSet = true
-            )
-            appRepository.saveSecuritySettings(settings)
-            _uiState.value = _uiState.value.copy(securitySettings = settings)
-        }
-    }
-
-    fun validatePassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
-        viewModelScope.launch {
-            val isValid = appRepository.validatePassword(password)
-            if (isValid) {
-                appRepository.resetFailedAttempts()
-                onSuccess()
-            } else {
-                appRepository.incrementFailedAttempts()
-                onError()
-            }
-        }
-    }
-
-    fun validateEmergencyPassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
-        viewModelScope.launch {
-            val isValid = appRepository.validateEmergencyPassword(password)
-            if (isValid) {
-                appRepository.setEmergencyUnlock()
-                appRepository.resetFailedAttempts()
-                onSuccess()
-            } else {
-                onError()
-            }
-        }
-    }
-
-    fun shouldTakePhoto(): Boolean {
-        return _uiState.value.securitySettings.failedAttempts >= 3
-    }
-
-    fun isEmergencyUnlockActive(): Boolean {
-        val settings = _uiState.value.securitySettings
-        return settings.emergencyUnlockUntil > System.currentTimeMillis()
-    }
-
-    fun refreshApps() {
-        val allApps = appRepository.getAllInstalledApps()
-        _lockedApps.value = allApps
     }
 }
 

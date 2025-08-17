@@ -15,7 +15,7 @@ import com.dungz.applocker.ui.screens.settings.SettingsScreen
 fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screen.AppSelection.route
+        startDestination = Screen.SecurityCheck.route
     ) {
         composable(Screen.SecurityCheck.route) {
             SecurityCheckScreen(navController)
@@ -30,7 +30,13 @@ fun AppNavigation(navController: NavHostController) {
         }
         
         composable(Screen.PasswordPrompt.route) {
-            PasswordPromptScreen()
+            PasswordPromptScreen(onSuccess = {
+                navController.navigate(Screen.AppSelection.route) {
+                    popUpTo(Screen.PasswordPrompt.route) { inclusive = true }
+                }
+            }, onEmergencyUnLock = {
+                navController.navigate(Screen.EmergencyPasswordSetup.route)
+            })
         }
         
         composable(Screen.Settings.route) {

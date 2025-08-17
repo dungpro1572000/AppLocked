@@ -45,7 +45,7 @@ fun PasswordPromptScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background( Color.White)
+            .background(LocalAppColorScheme.current.background)
             .padding(Dimen.paddingLarge),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -53,6 +53,7 @@ fun PasswordPromptScreen(
         Text(
             text = "App Locked",
             style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         if (state.value.isShowNormalPasswordView) {
@@ -143,12 +144,14 @@ fun PasswordPromptScreen(
                     Text("Emergency")
                 }
             }
-        } else {
+        }
+        else {
             Spacer(modifier = Modifier.height(Dimen.spacingLarge))
 
             Text(
                 text = "Emergency Password",
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 

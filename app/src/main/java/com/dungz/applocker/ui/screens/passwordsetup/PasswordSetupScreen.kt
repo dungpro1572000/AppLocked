@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,6 +32,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun PasswordSetupScreen(
@@ -38,7 +41,7 @@ fun PasswordSetupScreen(
     viewModel: PasswordSetUpViewModel = hiltViewModel()
 ) {
     val state = viewModel.state.collectAsState()
-
+    val coroutineScope = rememberCoroutineScope()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -158,11 +161,13 @@ fun PasswordSetupScreen(
                     }
 
                     else -> {
-
-                        viewModel.onSetUpPassword()
-                        navController.navigate(Screen.AppSelection.route) {
-                            popUpTo(Screen.PasswordSetup.route) { inclusive = true }
+                        coroutineScope.launch {
+                            viewModel.onSetUpPassword()
+                            navController.navigate(Screen.AppSelection.route) {
+                                popUpTo(Screen.PasswordSetup.route) { inclusive = true }
+                            }
                         }
+
                     }
                 }
             },

@@ -15,6 +15,8 @@ import android.os.IBinder
 import android.util.Log
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.NotificationCompat
@@ -23,12 +25,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.dungz.applocker.R
 import com.dungz.applocker.data.repository.AppRepository
 import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptScreen
 import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptViewModel
+import com.dungz.applocker.ui.theme.AppLockerTheme
+import com.dungz.applocker.ui.theme.LocalAppColorScheme
+import com.dungz.applocker.ui.theme.Typography
 import com.dungz.applocker.util.ToastLifecycleOwner
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -231,10 +235,17 @@ class AppLockService : Service() {
             val viewModel = PasswordPromptViewModel(appRepository = appRepository)
             overlayView = ComposeView(this).apply {
                 setContent {
-                        PasswordPromptScreen(
-                            onSuccess = { },
-                            onEmergencyUnLock = { /* TODO: Implement */ },
-                            viewModel = viewModel
+                        AppLockerTheme(
+                            content = {
+                                PasswordPromptScreen(
+                                    onSuccess = {
+                                        Log.d("DungNT354", "Password prompt success")
+                                        removeOverlayView()
+                                    },
+                                    onEmergencyUnLock = { /* TODO: Implement */ },
+                                    viewModel = viewModel
+                                )
+                            }
                         )
                 }
                 setViewTreeLifecycleOwner(overlayLifecycleOwner)
@@ -265,6 +276,7 @@ class AppLockService : Service() {
 
                 // Clear the reference
                 overlayView = null
+                windowManager = null
                 Log.d("AppLockService", "Overlay view removed")
             } catch (e: Exception) {
                 Log.e("AppLockService", "Error removing view from window manager", e)

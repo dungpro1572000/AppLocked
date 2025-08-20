@@ -3,11 +3,13 @@ package com.dungz.applocker.util
 import android.os.Bundle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 
-class ToastLifecycleOwner : SavedStateRegistryOwner {
+class ToastLifecycleOwner : SavedStateRegistryOwner, ViewModelStoreOwner {
     private var mLifecycleRegistry: LifecycleRegistry = LifecycleRegistry(this)
     private var mSavedStateRegistryController: SavedStateRegistryController =
         SavedStateRegistryController.create(this)
@@ -24,4 +26,6 @@ class ToastLifecycleOwner : SavedStateRegistryOwner {
         get() = mLifecycleRegistry
     override val savedStateRegistry: SavedStateRegistry
         get() = mSavedStateRegistryController.savedStateRegistry
+    override val viewModelStore: ViewModelStore
+        get() = ViewModelStore()
 }

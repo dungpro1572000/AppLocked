@@ -9,7 +9,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,11 +21,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Timelapse
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,21 +37,26 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dungz.applocker.service.AppLockService
+import com.dungz.applocker.service.AppMonitorService
 import com.dungz.applocker.ui.components.DismissPermissionDialog
 import com.dungz.applocker.ui.components.SystemAlertWindowPermissionDialog
 import com.dungz.applocker.ui.components.UsageStatsPermissionDialog
@@ -79,9 +86,7 @@ fun AppSelectionScreen(
                 viewModel.updateIsShowDenyPermissionDialog(true)
             } else {
                 viewModel.updateIsShowUsageStatsPermissionDialog(false)
-                val intent = Intent(context, AppLockService::class.java).apply {
-                    action = "START_MONITORING"
-                }
+                val intent = Intent(context, AppMonitorService::class.java)
                 context.startService(intent)
             }
         }
@@ -91,13 +96,15 @@ fun AppSelectionScreen(
         }
         if (!viewModel.isUsageStatsPermissionGrant()) {
             viewModel.updateIsShowUsageStatsPermissionDialog(true)
-        } else if (viewModel.isUsageStatsPermissionGrant()){
-            val intent = Intent(context, AppLockService::class.java).apply {
-                action = "START_MONITORING"
-            }
+        } else if (viewModel.isUsageStatsPermissionGrant()) {
+            val intent = Intent(context, AppMonitorService::class.java)
             context.startService(intent)
         }
     }
+
+    var showTimeUnlockDialog by remember { mutableStateOf(false) }
+    var selectedAppForTimeUnlock by remember { mutableStateOf<AppSelectionInfo?>(null) }
+    var numberInput by remember { mutableStateOf("") }
 
     val filteredApps =
         remember(state.value.listLockedApp, state.value.searchApp, state.value.isShowSystemApp) {
@@ -216,11 +223,54 @@ fun AppSelectionScreen(
                                 app.packageName,
                                 app.appName
                             )
+                        },
+                        onTimeUnLock = { selectedApp ->
+                            selectedAppForTimeUnlock = selectedApp
+                            numberInput = ""
+                            showTimeUnlockDialog = true
                         }
                     )
                 }
             }
         }
+    }
+
+    if (showTimeUnlockDialog) {
+        AlertDialog(
+            onDismissRequest = { showTimeUnlockDialog = false },
+            title = { Text("Temporary unlock") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = numberInput,
+                        onValueChange = { input ->
+                            numberInput = input.filter { it.isDigit() }.take(2)
+                        },
+                        label = { Text("Enter number") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(Dimen.spacingMedium))
+                    val n = numberInput.toIntOrNull() ?: 0
+                    Text("This app will be unlock in next $n minute")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    selectedAppForTimeUnlock?.let {
+                        viewModel.toggleAppUnlockTimer(it.packageName, it.appName)
+                    }
+                    showTimeUnlockDialog = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimeUnlockDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -228,83 +278,88 @@ fun AppSelectionScreen(
 @Composable
 private fun AppItem(
     app: AppSelectionInfo,
-    onToggleLock: () -> Unit
+    onToggleLock: () -> Unit,
+    onTimeUnLock: (AppSelectionInfo) -> Unit = {},
 ) {
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = Dimen.spacingSmall)
+            .padding(Dimen.paddingMedium)
             .clickable { onToggleLock.invoke() },
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(Dimen.paddingMedium),
-            verticalAlignment = Alignment.CenterVertically
+        // App icon - using a placeholder for now
+        if (app.isLocked) {
+            Icon(
+                modifier = Modifier.size(48.dp),
+                imageVector = Icons.Default.Lock,
+                tint = MaterialTheme.colorScheme.error,
+                contentDescription = app.appName
+            )
+        } else {
+            Image(
+                modifier = Modifier.size(48.dp),
+                bitmap = app.appIcon,
+                contentDescription = app.appName,
+            )
+        }
+        Spacer(modifier = Modifier.width(Dimen.spacingMedium))
+
+        // App info
+        Column(
+            modifier = Modifier.weight(1f)
         ) {
-            // App icon - using a placeholder for now
-            if (app.isLocked) {
-                Icon(
-                    modifier = Modifier.size(48.dp),
-                    imageVector = Icons.Default.Lock,
-                    tint = MaterialTheme.colorScheme.error,
-                    contentDescription = app.appName
-                )
-            } else {
-                Image(
-                    modifier = Modifier.size(48.dp),
-                    bitmap = app.appIcon,
-                    contentDescription = app.appName,
-                )
-            }
-            Spacer(modifier = Modifier.width(Dimen.spacingMedium))
+            Text(
+                text = app.appName,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
-            // App info
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = app.appName,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+            Text(
+                text = app.packageName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
+            if (app.isSystemApp) {
                 Text(
-                    text = app.packageName,
+                    text = "System App",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (app.isSystemApp) {
-                    Text(
-                        text = "System App",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.width(Dimen.spacingMedium))
-
-            // Lock toggle
-            IconButton(onClick = onToggleLock) {
-                Icon(
-                    imageVector = if (app.isLocked) {
-                        Icons.Default.Lock
-                    } else {
-                        Icons.Default.LockOpen
-                    },
-                    contentDescription = if (app.isLocked) "Unlock app" else "Lock app",
-                    tint = if (app.isLocked) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    }
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
         }
+
+        Spacer(modifier = Modifier.width(Dimen.spacingMedium))
+
+        // Lock toggle
+        IconButton(onClick = onToggleLock) {
+            Icon(
+                imageVector = if (app.isLocked) {
+                    Icons.Default.Lock
+                } else {
+                    Icons.Default.LockOpen
+                },
+                contentDescription = if (app.isLocked) "Unlock app" else "Lock app",
+                tint = if (app.isLocked) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                }
+            )
+        }
+
+        Spacer(Modifier.width(Dimen.spacingSmall))
+        IconButton(onClick = { onTimeUnLock.invoke(app) }) {
+            Icon(
+                imageVector = Icons.Default.Timelapse,
+                contentDescription = "time setup",
+                tint =
+                    MaterialTheme.colorScheme.primary
+            )
+        }
     }
-} 
+}

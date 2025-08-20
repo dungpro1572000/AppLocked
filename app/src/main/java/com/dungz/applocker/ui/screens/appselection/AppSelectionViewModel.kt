@@ -1,9 +1,11 @@
 package com.dungz.applocker.ui.screens.appselection
 
+import android.util.Log
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dungz.applocker.alarm.AppAlarm
 import com.dungz.applocker.data.repository.AppRepository
 import com.dungz.applocker.util.PermissionHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +18,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class AppSelectionViewModel @Inject constructor(
     private val appRepository: AppRepository,
-    private val permissionHelper: PermissionHelper
+    private val permissionHelper: PermissionHelper,
+    private val appAlarm: AppAlarm,
 ) :
     ViewModel() {
     private val _state = MutableStateFlow(AppSelectionState())
@@ -86,5 +89,12 @@ class AppSelectionViewModel @Inject constructor(
 
     fun isOverlayPermissionGrant(): Boolean {
         return permissionHelper.hasOverlayPermission()
+    }
+
+    fun toggleAppUnlockTimer(packageName: String, appName: String){
+       viewModelScope.launch {
+           Log.d("DungNT354", "toggleAppUnlockTimer: $appName, $packageName")
+           appAlarm.setAlarmForOpenLockedApps(appName,packageName, 5)
+       }
     }
 }

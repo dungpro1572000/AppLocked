@@ -5,11 +5,14 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.work.WorkManager
 import com.dungz.applocker.data.database.LockedAppDao
+import com.dungz.applocker.data.database.TempLockedAppDao
 import com.dungz.applocker.data.datastore.AppDataStore
 import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.model.LockedApp
 import com.dungz.applocker.data.model.SecuritySettings
+import com.dungz.applocker.data.model.TempLockedApp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -20,6 +23,7 @@ import javax.inject.Singleton
 class AppRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val lockedAppDao: LockedAppDao,
+    private val tempLockedAppDao: TempLockedAppDao,
     private val dataStore: AppDataStore,
 ) : AppRepository {
 
@@ -146,5 +150,23 @@ class AppRepositoryImpl @Inject constructor(
     override suspend fun shouldTakePhoto(): Boolean {
         val settings = getSecuritySettings()
         return settings.failedAttempts >= 3
+    }
+
+    override suspend fun getTempLockedApps(): List<TempLockedApp> {
+        return tempLockedAppDao.getAllTempLockedApps()
+    }
+
+    override suspend fun insertTempLockedApp(tempLockedApps: List<TempLockedApp>) {
+        tempLockedApps.forEach {
+            tempLockedAppDao.insertTempLockedApp(it)
+        }
+    }
+
+    override fun scheduleEmergencyUnlock() {
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            "EmergencyUnlockWorker",
+            androidx.work.ExistingWorkPolicy.REPLACE,
+            com.dungz.applocker.worker.EmergencyUnlockWorker.worker
+        )
     }
 } 

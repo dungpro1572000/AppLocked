@@ -29,6 +29,10 @@ object DatabaseModule {
 
     @Provides
     @Singleton
+    fun provideTempLockedAppDao(appDatabase: AppDatabase) = appDatabase.tempLockedAppDao()
+
+    @Provides
+    @Singleton
     fun provideDataStore(@ApplicationContext context: Context): AppDataStore {
         return AppDataStore(context)
     }

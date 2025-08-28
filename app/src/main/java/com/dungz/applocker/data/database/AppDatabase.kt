@@ -5,14 +5,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
 import com.dungz.applocker.data.model.LockedApp
+import com.dungz.applocker.data.model.TempLockedApp
 
 @Database(
-    entities = [LockedApp::class],
+    entities = [LockedApp::class, TempLockedApp::class],
     version = 1,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun lockedAppDao(): LockedAppDao
+    abstract fun tempLockedAppDao(): TempLockedAppDao
 
     companion object {
         @Volatile

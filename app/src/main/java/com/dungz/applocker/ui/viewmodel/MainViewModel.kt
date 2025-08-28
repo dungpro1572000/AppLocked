@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.model.SecuritySettings
 import com.dungz.applocker.data.repository.AppRepository
-import com.dungz.applocker.util.BiometricHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,15 +15,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val appRepository: AppRepository,
-    private val biometricHelper: BiometricHelper
+    private val appRepository: AppRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
     private val _lockedApps = MutableStateFlow<List<AppInfo>>(emptyList())
-    val lockedApps: StateFlow<List<AppInfo>> = _lockedApps.asStateFlow()
 
     init {
         loadInitialData()

@@ -128,7 +128,6 @@ fun AppSelectionScreen(
     }
     if (state.value.isShowUsageStatsPermissionDialog) {
         UsageStatsPermissionDialog(onGrantPermission = {
-            // Tạo Intent để chuyển người dùng đến màn hình cài đặt của ứng dụng
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             launcherUsageStat.launch(intent)
         }) {
@@ -353,13 +352,15 @@ private fun AppItem(
         }
 
         Spacer(Modifier.width(Dimen.spacingSmall))
-        IconButton(onClick = { onTimeUnLock.invoke(app) }) {
-            Icon(
-                imageVector = Icons.Default.Timelapse,
-                contentDescription = "time setup",
-                tint =
-                    MaterialTheme.colorScheme.primary
-            )
+        if (app.isLocked) {
+            IconButton(onClick = { onTimeUnLock.invoke(app) }) {
+                Icon(
+                    imageVector = Icons.Default.Timelapse,
+                    contentDescription = "time setup",
+                    tint =
+                        MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

@@ -3,6 +3,7 @@ package com.dungz.applocker.data.repository
 import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.model.LockedApp
 import com.dungz.applocker.data.model.SecuritySettings
+import com.dungz.applocker.data.model.TempLockedApp
 import kotlinx.coroutines.flow.Flow
 
 interface AppRepository {
@@ -21,4 +22,7 @@ interface AppRepository {
     suspend fun incrementFailedAttempts()
     suspend fun resetFailedAttempts()
     suspend fun shouldTakePhoto(): Boolean
+    suspend fun getTempLockedApps(): List<TempLockedApp>
+    suspend fun insertTempLockedApp(tempLockedApps: List<TempLockedApp>)
+    fun scheduleEmergencyUnlock()
 } 

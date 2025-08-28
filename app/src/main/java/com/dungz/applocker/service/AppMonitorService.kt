@@ -150,7 +150,7 @@ class AppMonitorService : Service() {
                 appRepository.getLockedApps().collectLatest { lockedApps ->
                     // Cache locked apps for better performance
                     cachedLockedApps = lockedApps.map { it.packageName }.toSet()
-
+                    Log.d(TAG, "cahcedLocked Apps: $cachedLockedApps")
                     while (isActive) {
                         checkAndHandleForegroundApp()
                         delay(CHECK_INTERVAL)
@@ -244,6 +244,7 @@ class AppMonitorService : Service() {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
                     getForegroundAppFromUsageStats()
                 }
+
                 else -> {
                     getForegroundAppFromActivityManager()
                 }
@@ -344,7 +345,6 @@ class AppMonitorService : Service() {
                                         removeLockOverlay()
                                     },
                                     onEmergencyUnLock = {
-                                        // TODO: Implement emergency unlock
                                         Log.d(TAG, "Emergency unlock requested")
                                     },
                                     viewModel = viewModel

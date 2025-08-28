@@ -13,7 +13,7 @@ class AppAlarm @Inject constructor(
     private val appRepository: AppRepository,
     @ApplicationContext private val context: Context,
 ) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     suspend fun setAlarmForOpenLockedApps(
         appName: String,
         packageName: String,

@@ -134,14 +134,15 @@ fun PasswordPromptScreen(
                 ) {
                     Text("Unlock")
                 }
-
-                OutlinedButton(
-                    onClick = {
-                        viewModel.toggleNormalPasswordView()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Emergency")
+                if (state.value.isEmergencyPasswordSet) {
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.toggleNormalPasswordView()
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Emergency")
+                    }
                 }
             }
         }
@@ -182,7 +183,8 @@ fun PasswordPromptScreen(
                     viewModel.validatePassword(
                         password = state.value.password,
                         onSuccess = {
-                            onEmergencyUnLock.invoke()
+                            onSuccess.invoke()
+                            viewModel.scheduleEmergencyUnlock()
                         },
                         onError = {
                             viewModel.updateError("Incorrect emergency password")

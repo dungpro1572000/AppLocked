@@ -17,23 +17,13 @@ import com.dungz.applocker.ui.theme.Dimen
 
 @Composable
 fun DismissPermissionDialog(
+    onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = true,
-        ),
-        title = {
-            Text(
-                text = "Permission Denied",
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
+    BaseConfirmDialog(
+        title = "Permission Denied",
+        initValue = Unit,
+        content = {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -51,14 +41,8 @@ fun DismissPermissionDialog(
                 )
             }
         },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("OK")
-            }
-        },
-        modifier = Modifier.padding(Dimen.paddingMedium)
+        onConfirm = { onConfirm() },
+        confirmButtonContent = "Grant permission",
+        onDismiss = onDismiss,
     )
 }

@@ -40,13 +40,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
 @AndroidEntryPoint
 class AppMonitorService : Service() {
@@ -141,24 +141,50 @@ class AppMonitorService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
     private fun startMonitoring() {
         stopMonitoring()
+        stopMonitoring()
+        Log.w(TAG, "Monitoring started")
 
-        monitoringJob = serviceScope.launch {
-            try {
-                appRepository.getLockedApps().collectLatest { lockedApps ->
-                    // Cache locked apps for better performance
-                    cachedLockedApps = lockedApps.map { it.packageName }.toSet()
-                    Log.d(TAG, "cahcedLocked Apps: $cachedLockedApps")
-                    while (isActive) {
-                        checkAndHandleForegroundApp()
-                        delay(CHECK_INTERVAL)
-                    }
+        // Loop 1: log service vẫn sống
+        serviceScope.launch {
+            repeat(10000) {
+                delay(1000L)
+                Log.e(TAG, "Service is running... $it and $isActive")
+            }
+        }
+
+        // Loop 2: monitor foreground app
+        serviceScope.launch {
+            while (isActive) {
+                try {
+                    Log.e(TAG, "Monitoring tick")
+                    checkAndHandleForegroundApp()
+                    delay(CHECK_INTERVAL)
+                } catch (e: CancellationException) {
+                    Log.w(TAG, "Monitoring loop cancelled", e)
+                    throw e // phải rethrow để không nuốt cancel
+                } catch (t: Throwable) {
+                    Log.e(TAG, "monitor tick error", t)
+                    delay(1000) // tránh loop error quá nhanh
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error in monitoring loop", e)
-                delay(1000) // Prevent tight error loops
+            }
+        }
+
+        // Loop 3: collect locked apps
+        serviceScope.launch {
+            while (isActive) {
+                try {
+                    appRepository.getLockedApps().collect { lockedApps ->
+                        cachedLockedApps = lockedApps.map { it.packageName }.toSet()
+                        Log.d(TAG, "cachedLockedApps: $cachedLockedApps")
+                    }
+                } catch (e: CancellationException) {
+                    Log.w(TAG, "LockedApps flow cancelled", e)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Error in locked apps flow", t)
+                    delay(1000)
+                }
             }
         }
     }
@@ -291,6 +317,11 @@ class AppMonitorService : Service() {
                 Log.d(TAG, "Overlay hidden successfully")
             }
             cleanupOverlayResources()
+            serviceScope.launch {
+                mutex.withLock { isOverlayShowing = false }
+            }
+            // ép tick sau khi đóng overlay để nhận app mới ngay
+            lastAppPackage = ""
         } catch (e: Exception) {
             Log.e(TAG, "Error hiding overlay", e)
         }
@@ -385,10 +416,10 @@ class AppMonitorService : Service() {
                 Log.d(TAG, "Lock overlay removed successfully")
             }
             cleanupOverlayResources()
+//
 
-            mutex.tryLock {
                 isOverlayShowing = false
-            }
+
         } catch (e: Exception) {
             Log.e(TAG, "Error removing overlay", e)
         }
@@ -452,7 +483,8 @@ class AppMonitorService : Service() {
             cachedLockedApps.size.takeIf { it > 0 } ?: run {
                 // Fallback to SharedPreferences if cache is empty
                 val sharedPrefs = getSharedPreferences("app_lock_prefs", MODE_PRIVATE)
-                val lockedApps = sharedPrefs.getStringSet("locked_apps", emptySet()) ?: emptySet()
+                val lockedApps =
+                    sharedPrefs.getStringSet("locked_apps", emptySet()) ?: emptySet()
                 lockedApps.size
             }
         } catch (e: Exception) {
@@ -462,7 +494,7 @@ class AppMonitorService : Service() {
     }
 
     override fun onDestroy() {
-        Log.d(TAG, "Service destroying")
+        Log.e(TAG, "Service destroying")
 
         try {
             stopMonitoring()

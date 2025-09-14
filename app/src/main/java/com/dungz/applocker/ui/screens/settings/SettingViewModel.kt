@@ -1,5 +1,6 @@
 package com.dungz.applocker.ui.screens.settings
 
+import android.app.ProgressDialog.show
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
@@ -66,11 +67,44 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
     }
 
 
-    fun updateShowChangePasswordDialog(show: Boolean) {
-        _state.value = _state.value.copy(isShowChangePasswordDialog = show)
+    fun updateShowChangePasswordDialog() {
+        val value = _state.value.isShowChangePasswordDialog
+        _state.value = _state.value.copy(isShowChangePasswordDialog = !value)
     }
 
-    fun updateShowEmergencyPasswordDialog(show: Boolean) {
-        _state.value = _state.value.copy(isShowEmergencyPasswordDialog = show)
+    fun updateShowEmergencyPasswordDialog() {
+        val value = _state.value.isShowEmergencyPasswordDialog
+        _state.value = _state.value.copy(isShowEmergencyPasswordDialog = !value)
     }
+    fun validatePassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
+        viewModelScope.launch {
+            val isValid =
+                 appRepository.validatePassword(password)
+            if (isValid) {
+
+                onSuccess()
+            } else {
+                onError()
+            }
+        }
+    }
+    fun validateEmergencyPassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
+        viewModelScope.launch {
+            val isValid = appRepository.validateEmergencyPassword(password)
+            if (isValid) {
+                onSuccess()
+            } else {
+                onError()
+            }
+        }
+    }
+
+    fun updateShowInputPasswordChangePasswordDialog(isShow: Boolean) {
+        _state.value = _state.value.copy(isShowInputPasswordChangePasswordDialog = isShow)
+    }
+
+    fun updateShowInputPasswordEmergencyPasswordDialog(isShow: Boolean) {
+        _state.value = _state.value.copy(isShowInputPasswordEmergencyPasswordDialog = isShow)
+    }
+
 }

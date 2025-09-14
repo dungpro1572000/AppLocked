@@ -14,38 +14,39 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.dungz.applocker.ui.components.ChangePasswordDialog
+import com.dungz.applocker.ui.components.InputPasswordDialog
+import com.dungz.applocker.ui.components.SetEmergencyPasswordDialog
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.util.GlobalSnackbar
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,8 +55,21 @@ fun SettingsScreen(
     viewModel: SettingViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        GlobalSnackbar.message.collect { msg ->
+            if (msg.isNotEmpty()) {
+                scope.launch {
+                    snackbarHostState.showSnackbar(msg)
+                }
+            }
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Settings") },
@@ -82,7 +96,7 @@ fun SettingsScreen(
                             icon = Icons.Default.Lock,
                             title = "Change Password",
                             subtitle = "Update your app password",
-                            onClick = { viewModel.updateShowChangePasswordDialog(true) }
+                            onClick = { viewModel.updateShowInputPasswordChangePasswordDialog(true) }
                         )
 
                         SettingsItem(
@@ -93,17 +107,9 @@ fun SettingsScreen(
                             } else {
                                 "Set emergency password"
                             },
-                            onClick = { viewModel.updateShowEmergencyPasswordDialog(true) }
-                        )
-
-                        SettingsItem(
-                            icon = Icons.Default.Fingerprint,
-                            title = "Biometric Authentication",
-                            subtitle = "Use fingerprint or face unlock",
-                            trailing = {
-                                Switch(
-                                    checked = uiState.value.securitySettings.isBiometricEnabled,
-                                    onCheckedChange = { /* TODO: Implement biometric toggle */ }
+                            onClick = {
+                                viewModel.updateShowInputPasswordEmergencyPasswordDialog(
+                                    true
                                 )
                             }
                         )
@@ -155,21 +161,46 @@ fun SettingsScreen(
     }
 
     if (uiState.value.isShowChangePasswordDialog) {
-        ChangePasswordDialog(
-            onDismiss = { viewModel.updateShowChangePasswordDialog(false) },
-            onConfirm = { newPassword ->
-                viewModel.updatePassword(newPassword)
-                viewModel.updateShowChangePasswordDialog(false)
-            }
-        )
+        ChangePasswordDialog(onDismiss = { viewModel.updateShowChangePasswordDialog() }) {
+            GlobalSnackbar.setMessage("Password changed")
+            viewModel.updatePassword(it)
+            viewModel.updateShowChangePasswordDialog()
+        }
+    }
+    if (uiState.value.isShowInputPasswordChangePasswordDialog) {
+        InputPasswordDialog(title = "Enter password to next step", onDismiss = {
+            viewModel.updateShowInputPasswordChangePasswordDialog(false)
+        }) {
+            viewModel.validatePassword(password = it, onSuccess = {
+                GlobalSnackbar.setMessage("Password verified")
+                viewModel.updateShowInputPasswordChangePasswordDialog(false)
+                viewModel.updateShowChangePasswordDialog()
+            }, onError = { viewModel.updateShowInputPasswordChangePasswordDialog(false)
+                GlobalSnackbar.setMessage("Incorrect password")
+            })
+        }
+    }
+
+    if (uiState.value.isShowInputPasswordEmergencyPasswordDialog) {
+        InputPasswordDialog(title = "Enter Emergency password to next step", onDismiss = {
+            viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
+        }) {
+            viewModel.validateEmergencyPassword(password = it, onSuccess = {
+                viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
+                viewModel.updateShowEmergencyPasswordDialog()
+            }, onError = { viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
+                GlobalSnackbar.setMessage("Incorrect emergency password")
+            })
+        }
     }
 
     if (uiState.value.isShowEmergencyPasswordDialog) {
-        EmergencyPasswordDialog(
-            onDismiss = { viewModel.updateShowEmergencyPasswordDialog(false) },
+        SetEmergencyPasswordDialog(
+            onDismiss = { viewModel.updateShowEmergencyPasswordDialog() },
             onConfirm = { emergencyPassword ->
+                GlobalSnackbar.setMessage("Emergency password set")
                 viewModel.updateEmergencyPassword(emergencyPassword)
-                viewModel.updateShowEmergencyPasswordDialog(false)
+                viewModel.updateShowEmergencyPasswordDialog()
             }
         )
     }
@@ -251,161 +282,3 @@ private fun SettingsItem(
         }
     }
 }
-
-@Composable
-private fun ChangePasswordDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var newPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Change Password") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = newPassword,
-                    onValueChange = {
-                        newPassword = it
-                        error = null
-                    },
-                    label = { Text("New Password") },
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = {
-                        confirmPassword = it
-                        error = null
-                    },
-                    label = { Text("Confirm Password") },
-                    singleLine = true
-                )
-
-                error?.let { errorMessage ->
-                    Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    when {
-                        newPassword.length < 4 -> {
-                            error = "Password must be at least 4 characters"
-                        }
-
-                        newPassword != confirmPassword -> {
-                            error = "Passwords do not match"
-                        }
-
-                        else -> {
-                            onConfirm(newPassword)
-                        }
-                    }
-                }
-            ) {
-                Text("Change")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-private fun EmergencyPasswordDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
-    var emergencyPassword by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Set Emergency Password") },
-        text = {
-            Column {
-                Text(
-                    text = "Emergency password will unlock all apps for 24 hours when used.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-
-                OutlinedTextField(
-                    value = emergencyPassword,
-                    onValueChange = {
-                        emergencyPassword = it
-                        error = null
-                    },
-                    label = { Text("Emergency Password") },
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = {
-                        confirmPassword = it
-                        error = null
-                    },
-                    label = { Text("Confirm Password") },
-                    singleLine = true
-                )
-
-                error?.let { errorMessage ->
-                    Spacer(modifier = Modifier.height(Dimen.spacingMedium))
-                    Text(
-                        text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    when {
-                        emergencyPassword.length < 4 -> {
-                            error = "Password must be at least 4 characters"
-                        }
-
-                        emergencyPassword != confirmPassword -> {
-                            error = "Passwords do not match"
-                        }
-
-                        else -> {
-                            onConfirm(emergencyPassword)
-                        }
-                    }
-                }
-            ) {
-                Text("Set")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-} 

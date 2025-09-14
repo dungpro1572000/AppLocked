@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +47,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +64,8 @@ import com.dungz.applocker.ui.components.SystemAlertWindowPermissionDialog
 import com.dungz.applocker.ui.components.UsageStatsPermissionDialog
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.util.GlobalSnackbar
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppSelectionScreen(
@@ -123,7 +127,8 @@ fun AppSelectionScreen(
         DismissPermissionDialog(
             onDismiss = {
                 viewModel.updateIsShowDenyPermissionDialog(false)
-            }
+            },
+            onConfirm = {}
         )
     }
     if (state.value.isShowUsageStatsPermissionDialog) {

@@ -24,46 +24,46 @@ fun AppNavigation(
     globalViewModel: MainViewModel = hiltViewModel()
 ) {
     var startDestination by remember { mutableStateOf<String?>(null) }
-
     LaunchedEffect(Unit) {
         startDestination =
             if (globalViewModel.isPasswordSet()) Screen.PasswordPrompt.route else Screen.PasswordSetup.route
     }
     if (startDestination != null) {
-        NavHost(
-            navController = navController,
-            startDestination = startDestination!!
-        ) {
-            composable(Screen.SecurityCheck.route) {
-                SecurityCheckScreen(navController)
-            }
 
-            composable(Screen.PasswordSetup.route) {
-                PasswordSetupScreen(navController)
-            }
+            NavHost(
+                navController = navController,
+                startDestination = startDestination!!
+            ) {
+                composable(Screen.SecurityCheck.route) {
+                    SecurityCheckScreen(navController)
+                }
 
-            composable(Screen.AppSelection.route) {
-                AppSelectionScreen(navController)
-            }
+                composable(Screen.PasswordSetup.route) {
+                    PasswordSetupScreen(navController)
+                }
 
-            composable(Screen.PasswordPrompt.route) {
-                PasswordPromptScreen(onSuccess = {
-                    navController.navigate(Screen.AppSelection.route) {
-                        popUpTo(Screen.PasswordPrompt.route) { inclusive = true }
-                    }
-                }, onEmergencyUnLock = {
-                    navController.navigate(Screen.EmergencyPasswordSetup.route)
-                })
-            }
+                composable(Screen.AppSelection.route) {
+                    AppSelectionScreen(navController)
+                }
 
-            composable(Screen.Settings.route) {
-                SettingsScreen(navController)
-            }
+                composable(Screen.PasswordPrompt.route) {
+                    PasswordPromptScreen(onSuccess = {
+                        navController.navigate(Screen.AppSelection.route) {
+                            popUpTo(Screen.PasswordPrompt.route) { inclusive = true }
+                        }
+                    }, onEmergencyUnLock = {
+                        navController.navigate(Screen.EmergencyPasswordSetup.route)
+                    })
+                }
 
-            composable(Screen.EmergencyPasswordSetup.route) {
-                EmergencyPasswordSetupScreen(navController)
+                composable(Screen.Settings.route) {
+                    SettingsScreen(navController)
+                }
+
+                composable(Screen.EmergencyPasswordSetup.route) {
+                    EmergencyPasswordSetupScreen(navController)
+                }
             }
         }
-    }
 
 } 

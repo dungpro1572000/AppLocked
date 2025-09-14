@@ -141,7 +141,7 @@ fun PasswordPromptScreen(
                         },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Emergency")
+                        Text("Emergency password")
                     }
                 }
             }
@@ -203,7 +203,7 @@ fun PasswordPromptScreen(
         TextButton(
             onClick = { viewModel.toggleNormalPasswordView() }
         ) {
-            Text("Cancel")
+            Text(if(state.value.isShowNormalPasswordView) "Emergency password" else "Normal password")
         }
     }
 } 

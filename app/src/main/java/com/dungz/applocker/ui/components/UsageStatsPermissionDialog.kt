@@ -4,17 +4,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.window.DialogProperties
 import com.dungz.applocker.ui.theme.Dimen
 
 @Composable
@@ -22,22 +16,10 @@ fun UsageStatsPermissionDialog(
     onGrantPermission: () -> Unit,
     onCancel: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onCancel,
-        properties = DialogProperties(
-            dismissOnClickOutside = true,
-            usePlatformDefaultWidth = false,
-        ),
-        modifier = Modifier.padding(Dimen.paddingMedium).fillMaxWidth().wrapContentHeight(),
-        title = {
-            Text(
-                text = "Usage-Stats Service Permission",
-                style = androidx.compose.material3.MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
+    BaseConfirmDialog(
+        title = "Usage-Stats Service Permission",
+        initValue = Unit,
+        content = {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -75,22 +57,10 @@ fun UsageStatsPermissionDialog(
                 )
             }
         },
-        confirmButton = {
-            Button(
-                onClick = onGrantPermission,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Grant Permission")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onCancel,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancel")
-            }
-        },
+        onConfirm = { onGrantPermission() },
+        confirmButtonContent = "Grant Permission",
+        onDismiss = onCancel,
+        dismissButtonContent = "Cancel"
     )
 }
 

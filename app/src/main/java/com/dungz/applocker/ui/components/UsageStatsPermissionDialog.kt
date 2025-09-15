@@ -10,6 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textErrorStyle
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 
 @Composable
 fun UsageStatsPermissionDialog(
@@ -25,7 +28,7 @@ fun UsageStatsPermissionDialog(
             ) {
                 Text(
                     text = "App Locker needs to run in the background to monitor app usage and ensure the app locking mechanism works correctly even when the app is not open.",
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                    style = textNormalStyle,
                     textAlign = TextAlign.Start
                 )
 
@@ -33,7 +36,7 @@ fun UsageStatsPermissionDialog(
 
                 Text(
                     text = "This permission allows the app to:",
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                    style = textTitleStyle,
                     textAlign = TextAlign.Start
                 )
 
@@ -43,7 +46,7 @@ fun UsageStatsPermissionDialog(
                     text = "• Monitor which apps are being opened\n" +
                             "• Show password prompts when locked apps are accessed\n" +
                             "• Ensure app protection works reliably",
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    style = textNormalStyle,
                     textAlign = TextAlign.Start
                 )
 
@@ -51,9 +54,8 @@ fun UsageStatsPermissionDialog(
 
                 Text(
                     text = "Without this permission, the app locking feature may not work properly when the app is in the background.",
-                    style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                    style = textErrorStyle,
                     textAlign = TextAlign.Start,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.error
                 )
             }
         },

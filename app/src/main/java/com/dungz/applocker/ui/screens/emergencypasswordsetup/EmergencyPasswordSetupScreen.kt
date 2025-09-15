@@ -31,6 +31,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textErrorStyle
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 
 @Composable
 fun EmergencyPasswordSetupScreen(
@@ -48,7 +51,7 @@ fun EmergencyPasswordSetupScreen(
     ) {
         Text(
             text = "Emergency Password",
-            style = MaterialTheme.typography.headlineMedium,
+            style = textTitleStyle,
             textAlign = TextAlign.Center
         )
 
@@ -56,9 +59,8 @@ fun EmergencyPasswordSetupScreen(
 
         Text(
             text = "Set an emergency password that will unlock all apps for 24 hours when used",
-            style = MaterialTheme.typography.bodyMedium,
+            style = textNormalStyle,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(Dimen.spacingExtraLarge))
@@ -138,8 +140,7 @@ fun EmergencyPasswordSetupScreen(
 
             Text(
                 text = errorMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
+                style = textErrorStyle,
                 textAlign = TextAlign.Center
             )
         }

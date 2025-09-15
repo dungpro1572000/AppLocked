@@ -13,6 +13,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textErrorStyle
+import com.dungz.applocker.ui.theme.textNormalStyle
 
 @Composable
 fun SetEmergencyPasswordDialog(
@@ -30,8 +32,7 @@ fun SetEmergencyPasswordDialog(
             Column {
                 Text(
                     text = "Emergency password will unlock all apps for 24 hours when used.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = textNormalStyle
                 )
 
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
@@ -62,8 +63,8 @@ fun SetEmergencyPasswordDialog(
                     Spacer(modifier = Modifier.height(Dimen.spacingMedium))
                     Text(
                         text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+
+                        style = textErrorStyle
                     )
                 }
             }

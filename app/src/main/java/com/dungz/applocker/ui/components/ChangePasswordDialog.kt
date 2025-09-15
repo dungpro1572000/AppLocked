@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textErrorStyle
 
 @Composable
 fun ChangePasswordDialog(
@@ -53,8 +54,7 @@ fun ChangePasswordDialog(
                     Spacer(modifier = Modifier.height(Dimen.spacingMedium))
                     Text(
                         text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        style = textErrorStyle
                     )
                 }
             }

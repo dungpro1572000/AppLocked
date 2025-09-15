@@ -34,6 +34,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dungz.applocker.ui.theme.Dimen
 import com.dungz.applocker.ui.theme.LocalAppColorScheme
+import com.dungz.applocker.ui.theme.textErrorStyle
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 
 @Composable
 fun PasswordPromptScreen(
@@ -52,8 +55,7 @@ fun PasswordPromptScreen(
     ) {
         Text(
             text = "App Locked",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = textTitleStyle,
             textAlign = TextAlign.Center
         )
         if (state.value.isShowNormalPasswordView) {
@@ -61,9 +63,8 @@ fun PasswordPromptScreen(
 
             Text(
                 text = "Enter your password to unlock this app",
-                style = MaterialTheme.typography.bodyMedium,
+                style = textNormalStyle,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(Dimen.spacingExtraLarge))
@@ -105,8 +106,7 @@ fun PasswordPromptScreen(
 
                 Text(
                     text = errorMessage,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+                    style = textErrorStyle,
                     textAlign = TextAlign.Center
                 )
             }
@@ -151,8 +151,7 @@ fun PasswordPromptScreen(
 
             Text(
                 text = "Emergency Password",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = textTitleStyle,
                 textAlign = TextAlign.Center
             )
 

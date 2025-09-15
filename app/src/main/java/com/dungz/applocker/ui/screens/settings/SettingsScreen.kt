@@ -1,5 +1,6 @@
 package com.dungz.applocker.ui.screens.settings
 
+import android.app.Activity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -42,10 +43,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.components.ChangePasswordDialog
+import com.dungz.applocker.ui.components.ClearAllDataDialog
 import com.dungz.applocker.ui.components.InputPasswordDialog
 import com.dungz.applocker.ui.components.SetEmergencyPasswordDialog
+import com.dungz.applocker.ui.components.UnlockAllAppDialog
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textSubTitleStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 import com.dungz.applocker.util.GlobalSnackbar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -123,7 +130,7 @@ fun SettingsScreen(
                             title = "Unlock All Apps",
                             subtitle = "Remove protection from all apps",
                             onClick = {
-                                viewModel.unLockAllApps()
+                                viewModel.updateShowUnlockAllAppDialog()
                             }
                         )
 
@@ -132,7 +139,7 @@ fun SettingsScreen(
                             title = "Clear All Data",
                             subtitle = "Remove all passwords and locked apps",
                             onClick = {
-                                viewModel.clearAllData()
+                                viewModel.updateShowClearAllDataDialog()
                             }
                         )
                     }
@@ -175,7 +182,26 @@ fun SettingsScreen(
                 GlobalSnackbar.setMessage("Password verified")
                 viewModel.updateShowInputPasswordChangePasswordDialog(false)
                 viewModel.updateShowChangePasswordDialog()
-            }, onError = { viewModel.updateShowInputPasswordChangePasswordDialog(false)
+            }, onError = {
+                viewModel.updateShowInputPasswordChangePasswordDialog(false)
+                GlobalSnackbar.setMessage("Incorrect password")
+            })
+        }
+    }
+
+    if (uiState.value.isShowInputClearAllDataDialog) {
+        InputPasswordDialog(title = "Enter password for clear all data", onDismiss = {
+            viewModel.updateShowInputClearAllDataConfirmationDialog(false)
+        }) {
+            viewModel.updateShowInputClearAllDataConfirmationDialog(false)
+            viewModel.validatePassword(password = it, onSuccess = {
+                GlobalSnackbar.setMessage("All data cleared")
+                viewModel.clearAllData()
+                scope.launch {
+                    delay(1000)
+                    restartActivity(navController.context as Activity)
+                }
+            }, onError = {
                 GlobalSnackbar.setMessage("Incorrect password")
             })
         }
@@ -204,6 +230,22 @@ fun SettingsScreen(
             }
         )
     }
+    if (uiState.value.isShowClearAllDataDialog) {
+        ClearAllDataDialog(onDismiss = { viewModel.updateShowClearAllDataDialog() }) {
+            viewModel.updateShowInputClearAllDataConfirmationDialog(true)
+        }
+    }
+    if (uiState.value.isShowUnlockAllAppDialog) {
+        UnlockAllAppDialog(onDismiss = { viewModel.updateShowUnlockAllAppDialog() }) {
+            viewModel.unLockAllApps()
+        }
+    }
+}
+
+fun restartActivity(activity: Activity) {
+    val intent = activity.intent
+    activity.finish()
+    activity.startActivity(intent)
 }
 
 @Composable
@@ -216,8 +258,7 @@ private fun SettingsSection(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            style = textTitleStyle,
             modifier = Modifier.padding(
                 horizontal = Dimen.paddingMedium,
                 vertical = Dimen.paddingSmall
@@ -268,13 +309,12 @@ private fun SettingsItem(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall
+                    style = textSubTitleStyle
                 )
 
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = textNormalStyle
                 )
             }
 

@@ -7,12 +7,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.DialogProperties
-import com.dungz.applocker.ui.theme.AppLockerTextColors
-import com.dungz.applocker.ui.theme.AppLockerTextStyles
+import com.dungz.applocker.ui.theme.textSubTitleStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 
 @Composable
 fun <T, R> BaseConfirmDialog(
@@ -24,7 +24,7 @@ fun <T, R> BaseConfirmDialog(
     confirmButtonContent: String = "Ok",
     dismissButtonContent: String = "Cancel"
 ) {
-    val data = rememberSaveable { mutableStateOf(initValue) }
+    val data = remember { mutableStateOf(initValue) }
     AlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -33,8 +33,7 @@ fun <T, R> BaseConfirmDialog(
         ),
         title = {
             Text(
-                title, style = AppLockerTextStyles.DialogTitle,
-                color = AppLockerTextColors.DialogTitleTextDark,
+                title, style = textTitleStyle,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -47,8 +46,6 @@ fun <T, R> BaseConfirmDialog(
             ) {
                 Text(
                     confirmButtonContent,
-                    style = AppLockerTextStyles.ButtonPrimary,
-                    color = AppLockerTextColors.ButtonPrimaryTextDark
                 )
             }
         },
@@ -59,8 +56,6 @@ fun <T, R> BaseConfirmDialog(
             ) {
                 Text(
                     dismissButtonContent,
-                    style = AppLockerTextStyles.ButtonSecondary,
-                    color = AppLockerTextColors.ButtonSecondaryTextDark
                 )
             }
         }

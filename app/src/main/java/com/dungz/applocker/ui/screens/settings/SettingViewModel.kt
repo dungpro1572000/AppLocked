@@ -1,6 +1,7 @@
 package com.dungz.applocker.ui.screens.settings
 
 import android.app.ProgressDialog.show
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
@@ -80,8 +81,8 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         viewModelScope.launch {
             val isValid =
                  appRepository.validatePassword(password)
+            Log.d("DungNT35444","check isValid inputPassword:${password} $isValid")
             if (isValid) {
-
                 onSuccess()
             } else {
                 onError()
@@ -105,6 +106,20 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
 
     fun updateShowInputPasswordEmergencyPasswordDialog(isShow: Boolean) {
         _state.value = _state.value.copy(isShowInputPasswordEmergencyPasswordDialog = isShow)
+    }
+
+    fun updateShowClearAllDataDialog() {
+        val value = _state.value.isShowClearAllDataDialog
+        _state.value = _state.value.copy(isShowClearAllDataDialog = !value)
+    }
+
+    fun updateShowUnlockAllAppDialog() {
+        val value = _state.value.isShowUnlockAllAppDialog
+        _state.value = _state.value.copy(isShowUnlockAllAppDialog = !value)
+    }
+
+    fun updateShowInputClearAllDataConfirmationDialog(isShow: Boolean) {
+        _state.value = _state.value.copy(isShowInputClearAllDataDialog = isShow)
     }
 
 }

@@ -64,6 +64,9 @@ import com.dungz.applocker.ui.components.SystemAlertWindowPermissionDialog
 import com.dungz.applocker.ui.components.UsageStatsPermissionDialog
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textSubTitleStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 import com.dungz.applocker.util.GlobalSnackbar
 import kotlinx.coroutines.launch
 
@@ -194,13 +197,13 @@ fun AppSelectionScreen(
                 ) {
                     Text(
                         text = "Apps (${filteredApps.value.size})",
-                        style = MaterialTheme.typography.titleMedium
+                        style = textTitleStyle
                     )
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = "Show system apps",
-                            style = MaterialTheme.typography.bodyMedium
+                            style = textNormalStyle
                         )
                         Spacer(Modifier.width(Dimen.paddingSmall))
                         Switch(
@@ -315,15 +318,14 @@ private fun AppItem(
         ) {
             Text(
                 text = app.appName,
-                style = MaterialTheme.typography.titleMedium,
+                style = textSubTitleStyle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
             Text(
                 text = app.packageName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = textNormalStyle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -331,8 +333,7 @@ private fun AppItem(
             if (app.isSystemApp) {
                 Text(
                     text = "System App",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary
+                    style = textNormalStyle
                 )
             }
         }

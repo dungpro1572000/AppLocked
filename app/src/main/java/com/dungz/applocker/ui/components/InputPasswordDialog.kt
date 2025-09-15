@@ -49,7 +49,7 @@ fun InputPasswordDialog(
                 )
             }
         },
-        onConfirm = { onConfirm(it) },
+        onConfirm = { onConfirm(text.value) },
         confirmButtonContent = "Unlock",
         onDismiss = onDismiss,
     )

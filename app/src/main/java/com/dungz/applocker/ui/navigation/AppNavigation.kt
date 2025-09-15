@@ -10,7 +10,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.dungz.applocker.ui.screens.SecurityCheckScreen
 import com.dungz.applocker.ui.screens.appselection.AppSelectionScreen
 import com.dungz.applocker.ui.screens.emergencypasswordsetup.EmergencyPasswordSetupScreen
 import com.dungz.applocker.ui.screens.passwordprompt.PasswordPromptScreen
@@ -34,9 +33,7 @@ fun AppNavigation(
                 navController = navController,
                 startDestination = startDestination!!
             ) {
-                composable(Screen.SecurityCheck.route) {
-                    SecurityCheckScreen(navController)
-                }
+
 
                 composable(Screen.PasswordSetup.route) {
                     PasswordSetupScreen(navController)

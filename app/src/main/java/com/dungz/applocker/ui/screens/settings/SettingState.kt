@@ -7,6 +7,7 @@ data class SettingState(
     val isShowChangePasswordDialog: Boolean = false,
     val isShowInputPasswordChangePasswordDialog: Boolean = false,
     val isShowInputPasswordEmergencyPasswordDialog: Boolean = false,
+    val isShowInputClearAllDataDialog: Boolean = false,
     val isShowEmergencyPasswordDialog: Boolean = false,
     val isShowClearAllDataDialog: Boolean = false,
     val isShowUnlockAllAppDialog: Boolean = false

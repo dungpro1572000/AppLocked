@@ -32,6 +32,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
+import com.dungz.applocker.ui.theme.textErrorStyle
+import com.dungz.applocker.ui.theme.textInButtonStyle
+import com.dungz.applocker.ui.theme.textNormalStyle
+import com.dungz.applocker.ui.theme.textTitleStyle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -51,7 +55,7 @@ fun PasswordSetupScreen(
     ) {
         Text(
             text = "Set Up App Password",
-            style = MaterialTheme.typography.headlineMedium,
+            style = textTitleStyle,
             textAlign = TextAlign.Center
         )
 
@@ -59,9 +63,8 @@ fun PasswordSetupScreen(
 
         Text(
             text = "Create a password to protect your apps",
-            style = MaterialTheme.typography.bodyMedium,
+            style = textNormalStyle,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(Dimen.spacingExtraLarge))
@@ -141,8 +144,7 @@ fun PasswordSetupScreen(
 
             Text(
                 text = errorMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error,
+                style = textErrorStyle,
                 textAlign = TextAlign.Center
             )
         }

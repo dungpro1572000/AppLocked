@@ -22,6 +22,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
             _state.value = _state.value.copy(
                 securitySettings = settings,
             )
+            Log.d("DungNT555","check settings init: $settings" )
         }
     }
 

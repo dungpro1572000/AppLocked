@@ -109,15 +109,19 @@ fun SettingsScreen(
                         SettingsItem(
                             icon = Icons.Default.Security,
                             title = "Emergency Password",
-                            subtitle = if (uiState.value.securitySettings.isEmergencyPasswordSet) {
-                                "Emergency password is set"
+                            subtitle = if (!uiState.value.securitySettings.isEmergencyPasswordSet) {
+                                "Set new emergency password"
                             } else {
                                 "Set emergency password"
                             },
                             onClick = {
-                                viewModel.updateShowInputPasswordEmergencyPasswordDialog(
-                                    true
-                                )
+                                if (uiState.value.securitySettings.isEmergencyPasswordSet) {
+                                    viewModel.updateShowInputPasswordEmergencyPasswordDialog(
+                                        true
+                                    )
+                                } else {
+                                    viewModel.updateShowEmergencyPasswordDialog()
+                                }
                             }
                         )
                     }
@@ -214,7 +218,8 @@ fun SettingsScreen(
             viewModel.validateEmergencyPassword(password = it, onSuccess = {
                 viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
                 viewModel.updateShowEmergencyPasswordDialog()
-            }, onError = { viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
+            }, onError = {
+                viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
                 GlobalSnackbar.setMessage("Incorrect emergency password")
             })
         }

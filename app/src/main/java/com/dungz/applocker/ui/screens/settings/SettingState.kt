@@ -11,6 +11,4 @@ data class SettingState(
     val isShowEmergencyPasswordDialog: Boolean = false,
     val isShowClearAllDataDialog: Boolean = false,
     val isShowUnlockAllAppDialog: Boolean = false
-) {
-
-}
+)

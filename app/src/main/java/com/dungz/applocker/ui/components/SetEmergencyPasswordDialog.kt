@@ -3,7 +3,6 @@ package com.dungz.applocker.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,12 +70,12 @@ fun SetEmergencyPasswordDialog(
         },
         onConfirm = {
             when {
-                emergencyPassword.length < 4 -> {
-                    error = "Password must be at least 4 characters"
+                emergencyPassword.length < 4 || confirmPassword.length < 4 -> {
+                    error = "Emergency Password must be at least 4 characters"
                 }
 
                 emergencyPassword != confirmPassword -> {
-                    error = "Passwords do not match"
+                    error = "Emergency Passwords do not match"
                 }
 
                 else -> {

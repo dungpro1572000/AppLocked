@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">AppLocker</string>
+    <string name="notification_channel_name">App lock service</string>
+    <string name="notification_channel_description">Background protection service is running</string>
+    <string name="notification_title">App lock is running</string>
+    <plurals name="notification_content_body">
+        <item quantity="one">Protecting %d app</item>
+        <item quantity="other">Protecting %d apps</item>
+    </plurals>
 </resources>

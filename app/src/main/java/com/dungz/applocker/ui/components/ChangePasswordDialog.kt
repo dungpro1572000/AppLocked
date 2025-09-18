@@ -3,7 +3,6 @@ package com.dungz.applocker.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,6 +59,17 @@ fun ChangePasswordDialog(
             }
         },
         onDismiss = onDismiss,
-        onConfirm = { onConfirm.invoke(newPassword) }
+        onConfirm = {
+            if (newPassword.length <4 || confirmPassword.length <4) {
+                error = "Password must be at least 4 characters"
+                return@BaseConfirmDialog
+            }
+            if (newPassword != confirmPassword) {
+                error = "Passwords do not match"
+                return@BaseConfirmDialog
+            } else {
+                onConfirm.invoke(newPassword)
+            }
+        }
     )
 }

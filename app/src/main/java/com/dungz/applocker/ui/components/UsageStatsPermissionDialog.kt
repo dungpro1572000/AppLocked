@@ -20,14 +20,14 @@ fun UsageStatsPermissionDialog(
     onCancel: () -> Unit
 ) {
     BaseConfirmDialog(
-        title = "Usage-Stats Service Permission",
+        title = "Usage stats permission",
         initValue = Unit,
         content = {
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "App Locker needs to run in the background to monitor app usage and ensure the app locking mechanism works correctly even when the app is not open.",
+                    text = "AppLocker runs in the background to monitor app usage so the lock works even when the app is closed.",
                     style = textNormalStyle,
                     textAlign = TextAlign.Start
                 )
@@ -35,7 +35,7 @@ fun UsageStatsPermissionDialog(
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
 
                 Text(
-                    text = "This permission allows the app to:",
+                    text = "This permission allows:",
                     style = textTitleStyle,
                     textAlign = TextAlign.Start
                 )
@@ -43,9 +43,9 @@ fun UsageStatsPermissionDialog(
                 Spacer(modifier = Modifier.height(Dimen.spacingSmall))
 
                 Text(
-                    text = "• Monitor which apps are being opened\n" +
-                            "• Show password prompts when locked apps are accessed\n" +
-                            "• Ensure app protection works reliably",
+                    text = "• Detect when apps are opened\n" +
+                            "• Show a password prompt for locked apps\n" +
+                            "• Keep protection reliable",
                     style = textNormalStyle,
                     textAlign = TextAlign.Start
                 )
@@ -53,14 +53,14 @@ fun UsageStatsPermissionDialog(
                 Spacer(modifier = Modifier.height(Dimen.spacingMedium))
 
                 Text(
-                    text = "Without this permission, the app locking feature may not work properly when the app is in the background.",
+                    text = "Without it, app locking may not work in the background.",
                     style = textErrorStyle,
                     textAlign = TextAlign.Start,
                 )
             }
         },
         onConfirm = { onGrantPermission() },
-        confirmButtonContent = "Grant Permission",
+        confirmButtonContent = "Grant permission",
         onDismiss = onCancel,
         dismissButtonContent = "Cancel"
     )
@@ -68,6 +68,6 @@ fun UsageStatsPermissionDialog(
 
 @Preview
 @Composable
-fun test() {
+fun TestPreview() {
     UsageStatsPermissionDialog({}) { }
 }

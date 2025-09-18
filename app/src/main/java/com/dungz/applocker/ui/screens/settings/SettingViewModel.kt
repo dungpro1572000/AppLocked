@@ -1,6 +1,5 @@
 package com.dungz.applocker.ui.screens.settings
 
-import android.app.ProgressDialog.show
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,7 +21,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
             _state.value = _state.value.copy(
                 securitySettings = settings,
             )
-            Log.d("DungNT555","check settings init: $settings" )
+            Log.d("Settings", "Initialized with: $settings")
         }
     }
 
@@ -48,7 +47,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         }
     }
 
-    fun unLockAllApps() {
+    fun unlockAllApps() {
         viewModelScope.launch {
             appRepository.unlockAllApps()
         }
@@ -58,13 +57,6 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         viewModelScope.launch {
             appRepository.unlockAllApps()
             appRepository.deleteAllSecuritySettings()
-        }
-    }
-
-    fun updateSecuritySettings(settings: SettingState) {
-        viewModelScope.launch {
-            appRepository.saveSecuritySettings(settings.securitySettings)
-            _state.value = settings
         }
     }
 
@@ -80,9 +72,8 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
     }
     fun validatePassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
         viewModelScope.launch {
-            val isValid =
-                 appRepository.validatePassword(password)
-            Log.d("DungNT35444","check isValid inputPassword:${password} $isValid")
+            val isValid = appRepository.validatePassword(password)
+            Log.d("Settings", "Password validation result: $isValid")
             if (isValid) {
                 onSuccess()
             } else {

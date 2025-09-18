@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
@@ -40,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.dungz.applocker.ui.components.ChangePasswordDialog
@@ -64,7 +65,7 @@ fun SettingsScreen(
     val uiState = viewModel.state.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         GlobalSnackbar.message.collect { msg ->
             if (msg.isNotEmpty()) {
@@ -82,7 +83,7 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -101,18 +102,18 @@ fun SettingsScreen(
                     SettingsSection(title = "Security") {
                         SettingsItem(
                             icon = Icons.Default.Lock,
-                            title = "Change Password",
-                            subtitle = "Update your app password",
+                            title = "Change password",
+                            subtitle = "Update your app password.",
                             onClick = { viewModel.updateShowInputPasswordChangePasswordDialog(true) }
                         )
 
                         SettingsItem(
                             icon = Icons.Default.Security,
-                            title = "Emergency Password",
+                            title = "Emergency password",
                             subtitle = if (!uiState.value.securitySettings.isEmergencyPasswordSet) {
-                                "Set new emergency password"
+                                "Set a new emergency password."
                             } else {
-                                "Set emergency password"
+                                "Change the emergency password."
                             },
                             onClick = {
                                 if (uiState.value.securitySettings.isEmergencyPasswordSet) {
@@ -128,11 +129,11 @@ fun SettingsScreen(
                 }
 
                 item {
-                    SettingsSection(title = "App Management") {
+                    SettingsSection(title = "App management") {
                         SettingsItem(
                             icon = Icons.Default.LockOpen,
-                            title = "Unlock All Apps",
-                            subtitle = "Remove protection from all apps",
+                            title = "Unlock all apps",
+                            subtitle = "Remove protection from all apps.",
                             onClick = {
                                 viewModel.updateShowUnlockAllAppDialog()
                             }
@@ -140,8 +141,8 @@ fun SettingsScreen(
 
                         SettingsItem(
                             icon = Icons.Default.Delete,
-                            title = "Clear All Data",
-                            subtitle = "Remove all passwords and locked apps",
+                            title = "Clear all data",
+                            subtitle = "Remove all passwords and locked apps.",
                             onClick = {
                                 viewModel.updateShowClearAllDataDialog()
                             }
@@ -154,13 +155,16 @@ fun SettingsScreen(
                         SettingsItem(
                             icon = Icons.Default.Info,
                             title = "App Version",
-                            subtitle = "1.0.0"
+                            subtitle = context.packageManager.getPackageInfo(
+                                context.packageName,
+                                0
+                            ).versionName ?: "1.0.0"
                         )
 
                         SettingsItem(
                             icon = Icons.Default.PrivacyTip,
-                            title = "Privacy Policy",
-                            subtitle = "Read our privacy policy",
+                            title = "Privacy policy",
+                            subtitle = "Read our privacy policy.",
                             onClick = {
                                 // TODO: Open privacy policy
                             }
@@ -173,46 +177,46 @@ fun SettingsScreen(
 
     if (uiState.value.isShowChangePasswordDialog) {
         ChangePasswordDialog(onDismiss = { viewModel.updateShowChangePasswordDialog() }) {
-            GlobalSnackbar.setMessage("Password changed")
+            GlobalSnackbar.setMessage("Password changed.")
             viewModel.updatePassword(it)
             viewModel.updateShowChangePasswordDialog()
         }
     }
     if (uiState.value.isShowInputPasswordChangePasswordDialog) {
-        InputPasswordDialog(title = "Enter password to next step", onDismiss = {
+        InputPasswordDialog(title = "Enter your password to continue", onDismiss = {
             viewModel.updateShowInputPasswordChangePasswordDialog(false)
         }) {
             viewModel.validatePassword(password = it, onSuccess = {
-                GlobalSnackbar.setMessage("Password verified")
+                GlobalSnackbar.setMessage("Password verified.")
                 viewModel.updateShowInputPasswordChangePasswordDialog(false)
                 viewModel.updateShowChangePasswordDialog()
             }, onError = {
                 viewModel.updateShowInputPasswordChangePasswordDialog(false)
-                GlobalSnackbar.setMessage("Incorrect password")
+                GlobalSnackbar.setMessage("Incorrect password.")
             })
         }
     }
 
     if (uiState.value.isShowInputClearAllDataDialog) {
-        InputPasswordDialog(title = "Enter password for clear all data", onDismiss = {
+        InputPasswordDialog(title = "Enter your password to clear all data", onDismiss = {
             viewModel.updateShowInputClearAllDataConfirmationDialog(false)
         }) {
             viewModel.updateShowInputClearAllDataConfirmationDialog(false)
             viewModel.validatePassword(password = it, onSuccess = {
-                GlobalSnackbar.setMessage("All data cleared")
+                GlobalSnackbar.setMessage("All data cleared.")
                 viewModel.clearAllData()
                 scope.launch {
                     delay(1000)
                     restartActivity(navController.context as Activity)
                 }
             }, onError = {
-                GlobalSnackbar.setMessage("Incorrect password")
+                GlobalSnackbar.setMessage("Incorrect password.")
             })
         }
     }
 
     if (uiState.value.isShowInputPasswordEmergencyPasswordDialog) {
-        InputPasswordDialog(title = "Enter Emergency password to next step", onDismiss = {
+        InputPasswordDialog(title = "Enter your emergency password to continue", onDismiss = {
             viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
         }) {
             viewModel.validateEmergencyPassword(password = it, onSuccess = {
@@ -220,7 +224,7 @@ fun SettingsScreen(
                 viewModel.updateShowEmergencyPasswordDialog()
             }, onError = {
                 viewModel.updateShowInputPasswordEmergencyPasswordDialog(false)
-                GlobalSnackbar.setMessage("Incorrect emergency password")
+                GlobalSnackbar.setMessage("Incorrect emergency password.")
             })
         }
     }
@@ -229,7 +233,7 @@ fun SettingsScreen(
         SetEmergencyPasswordDialog(
             onDismiss = { viewModel.updateShowEmergencyPasswordDialog() },
             onConfirm = { emergencyPassword ->
-                GlobalSnackbar.setMessage("Emergency password set")
+                GlobalSnackbar.setMessage("Emergency password set.")
                 viewModel.updateEmergencyPassword(emergencyPassword)
                 viewModel.updateShowEmergencyPasswordDialog()
             }
@@ -242,7 +246,7 @@ fun SettingsScreen(
     }
     if (uiState.value.isShowUnlockAllAppDialog) {
         UnlockAllAppDialog(onDismiss = { viewModel.updateShowUnlockAllAppDialog() }) {
-            viewModel.unLockAllApps()
+            viewModel.unlockAllApps()
         }
     }
 }

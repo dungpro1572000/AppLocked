@@ -48,6 +48,7 @@ import com.dungz.applocker.ui.components.ClearAllDataDialog
 import com.dungz.applocker.ui.components.InputPasswordDialog
 import com.dungz.applocker.ui.components.SetEmergencyPasswordDialog
 import com.dungz.applocker.ui.components.UnlockAllAppDialog
+import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
 import com.dungz.applocker.ui.theme.textNormalStyle
 import com.dungz.applocker.ui.theme.textSubTitleStyle
@@ -230,14 +231,15 @@ fun SettingsScreen(
     }
 
     if (uiState.value.isShowEmergencyPasswordDialog) {
-        SetEmergencyPasswordDialog(
-            onDismiss = { viewModel.updateShowEmergencyPasswordDialog() },
-            onConfirm = { emergencyPassword ->
-                GlobalSnackbar.setMessage("Emergency password set.")
-                viewModel.updateEmergencyPassword(emergencyPassword)
-                viewModel.updateShowEmergencyPasswordDialog()
-            }
-        )
+        navController.navigate(Screen.EmergencyPasswordSetup.route)
+//        SetEmergencyPasswordDialog(
+//            onDismiss = { viewModel.updateShowEmergencyPasswordDialog() },
+//            onConfirm = { emergencyPassword ->
+//                GlobalSnackbar.setMessage("Emergency password set.")
+//                viewModel.updateEmergencyPassword(emergencyPassword)
+//                viewModel.updateShowEmergencyPasswordDialog()
+//            }
+//        )
     }
     if (uiState.value.isShowClearAllDataDialog) {
         ClearAllDataDialog(onDismiss = { viewModel.updateShowClearAllDataDialog() }) {

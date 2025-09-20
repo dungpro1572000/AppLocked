@@ -180,13 +180,5 @@ fun PasswordSetupScreen(
         }
 
         Spacer(modifier = Modifier.height(Dimen.spacingLarge))
-
-        TextButton(
-            onClick = {
-                navController.navigate(Screen.EmergencyPasswordSetup.route)
-            }
-        ) {
-            Text("Set Emergency Password (Optional)")
-        }
     }
 }

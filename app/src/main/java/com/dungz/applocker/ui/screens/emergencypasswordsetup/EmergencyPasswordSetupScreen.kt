@@ -184,7 +184,7 @@ fun EmergencyPasswordSetupScreen(
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text("Skip")
+                Text("Close")
             }
         }
     }

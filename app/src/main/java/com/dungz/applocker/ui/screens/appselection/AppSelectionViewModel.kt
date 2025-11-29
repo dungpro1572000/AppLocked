@@ -26,7 +26,7 @@ class AppSelectionViewModel @Inject constructor(
     val state: StateFlow<AppSelectionState> = _state
 
     init {
-        viewModelScope.launch() {
+        viewModelScope.launch(Dispatchers.IO){
             // Load locked apps
             appRepository.getLockedApps().collect { lockedApps ->
                 val allApps = appRepository.getAllInstalledApps()
@@ -75,7 +75,7 @@ class AppSelectionViewModel @Inject constructor(
     }
 
     fun toggleAppLock(isLocked: Boolean, packageName: String, appName: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             if (isLocked) {
                 appRepository.unlockApp(packageName)
             } else {
@@ -92,7 +92,7 @@ class AppSelectionViewModel @Inject constructor(
     }
 
     fun toggleAppUnlockTimer(packageName: String, appName: String){
-       viewModelScope.launch {
+       viewModelScope.launch(Dispatchers.IO) {
            Log.d("DungNT354", "toggleAppUnlockTimer: $appName, $packageName")
            appAlarm.setAlarmForOpenLockedApps(appName,packageName, 5)
        }

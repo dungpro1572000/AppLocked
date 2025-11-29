@@ -20,7 +20,7 @@ class PasswordPromptViewModel @Inject constructor(
     val state: StateFlow<PasswordPromptState> = _state
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = appRepository.getSecuritySettings()
             _state.value =
                 _state.value.copy(isEmergencyPasswordSet = settings.isEmergencyPasswordSet)

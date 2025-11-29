@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -16,7 +17,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
     val state: StateFlow<SettingState> = _state
 
     init {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = appRepository.getSecuritySettings()
             _state.value = _state.value.copy(
                 securitySettings = settings,
@@ -26,7 +27,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
     }
 
     fun updatePassword(password: String) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = _state.value.securitySettings.copy(
                 password = password,
                 isPasswordSet = true
@@ -36,25 +37,14 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         }
     }
 
-    fun updateEmergencyPassword(emergencyPassword: String) {
-        viewModelScope.launch {
-            val settings = _state.value.securitySettings.copy(
-                emergencyPassword = emergencyPassword,
-                isEmergencyPasswordSet = true
-            )
-            appRepository.saveSecuritySettings(settings)
-            _state.value = _state.value.copy(securitySettings = settings)
-        }
-    }
-
     fun unlockAllApps() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             appRepository.unlockAllApps()
         }
     }
 
     fun clearAllData() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             appRepository.unlockAllApps()
             appRepository.deleteAllSecuritySettings()
         }
@@ -71,7 +61,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         _state.value = _state.value.copy(isShowEmergencyPasswordDialog = !value)
     }
     fun validatePassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val isValid = appRepository.validatePassword(password)
             Log.d("Settings", "Password validation result: $isValid")
             if (isValid) {
@@ -82,7 +72,7 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
         }
     }
     fun validateEmergencyPassword(password: String, onSuccess: () -> Unit, onError: () -> Unit) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val isValid = appRepository.validateEmergencyPassword(password)
             if (isValid) {
                 onSuccess()

@@ -33,8 +33,8 @@ class AppAlarm @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC,
-            System.currentTimeMillis() + timeTrigger * 1000 * 60, // Convert minutes to milliseconds
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            (timeTrigger * 1000 * 60).toLong(), // Convert minutes to milliseconds
             pendingIntent
         )
 

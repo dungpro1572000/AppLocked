@@ -125,9 +125,10 @@ class AppMonitorService : Service() {
 
     private fun handleIntent(intent: Intent?) {
         if (intent?.action == AppAlarm.ACTION_LOCK_APP) {
+
             val packageName = intent.getStringExtra(AppAlarm.PACKAGE_NAME_EXTRA) ?: ""
             val appName = intent.getStringExtra(AppAlarm.APP_NAME_EXTRA) ?: ""
-
+            Log.d(TAG,"get locked app: $appName")
             if (packageName.isNotEmpty() && appName.isNotEmpty()) {
                 serviceScope.launch(Dispatchers.IO) {
                     try {
@@ -158,7 +159,6 @@ class AppMonitorService : Service() {
         serviceScope.launch {
             while (isActive) {
                 try {
-                    Log.e(TAG, "Monitoring tick")
                     checkAndHandleForegroundApp()
                     delay(CHECK_INTERVAL)
                 } catch (e: CancellationException) {
@@ -259,6 +259,7 @@ class AppMonitorService : Service() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun isRelevantUsageEvent(event: UsageEvents.Event): Boolean {
         return event.eventType == UsageEvents.Event.ACTIVITY_RESUMED ||
                 event.eventType == UsageEvents.Event.MOVE_TO_FOREGROUND
@@ -505,6 +506,12 @@ class AppMonitorService : Service() {
         } finally {
             super.onDestroy()
         }
+    }
+
+    override fun onTimeout(startId: Int) {
+        super.onTimeout(startId)
+        Log.w(TAG, "Service timeout for startId: $startId")
+        // start service again if needed
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

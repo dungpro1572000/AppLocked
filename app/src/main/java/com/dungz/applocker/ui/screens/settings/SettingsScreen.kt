@@ -46,7 +46,6 @@ import androidx.navigation.NavController
 import com.dungz.applocker.ui.components.ChangePasswordDialog
 import com.dungz.applocker.ui.components.ClearAllDataDialog
 import com.dungz.applocker.ui.components.InputPasswordDialog
-import com.dungz.applocker.ui.components.SetEmergencyPasswordDialog
 import com.dungz.applocker.ui.components.UnlockAllAppDialog
 import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
@@ -247,7 +246,12 @@ fun SettingsScreen(
         }
     }
     if (uiState.value.isShowUnlockAllAppDialog) {
-        UnlockAllAppDialog(onDismiss = { viewModel.updateShowUnlockAllAppDialog() }) {
+        UnlockAllAppDialog(onDismiss = {
+            viewModel.updateShowUnlockAllAppDialog()
+
+        }) {
+            viewModel.updateShowUnlockAllAppDialog()
+
             viewModel.unlockAllApps()
         }
     }

@@ -9,7 +9,7 @@ import com.dungz.applocker.data.model.TempLockedApp
 
 @Database(
     entities = [LockedApp::class, TempLockedApp::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

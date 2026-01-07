@@ -36,7 +36,6 @@ import com.dungz.applocker.util.ToastLifecycleOwner
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -55,7 +54,6 @@ class AppMonitorService : Service() {
     lateinit var appRepository: AppRepository
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var monitoringJob: Job? = null
     private lateinit var usageStatsManager: UsageStatsManager
     private val mutex = Mutex()
 
@@ -76,11 +74,7 @@ class AppMonitorService : Service() {
         WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                WindowManager.LayoutParams.TYPE_PHONE
-            },
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
                     WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
@@ -128,7 +122,7 @@ class AppMonitorService : Service() {
 
             val packageName = intent.getStringExtra(AppAlarm.PACKAGE_NAME_EXTRA) ?: ""
             val appName = intent.getStringExtra(AppAlarm.APP_NAME_EXTRA) ?: ""
-            Log.d(TAG,"get locked app: $appName")
+            Log.d(TAG, "get locked app: $appName")
             if (packageName.isNotEmpty() && appName.isNotEmpty()) {
                 serviceScope.launch(Dispatchers.IO) {
                     try {
@@ -144,16 +138,7 @@ class AppMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
     private fun startMonitoring() {
         stopMonitoring()
-        stopMonitoring()
         Log.w(TAG, "Monitoring started")
-
-        // Loop 1: log service vẫn sống
-        serviceScope.launch {
-            repeat(10000) {
-                delay(1000L)
-                Log.e(TAG, "Service is running... $it and $isActive")
-            }
-        }
 
         // Loop 2: monitor foreground app
         serviceScope.launch {
@@ -173,18 +158,10 @@ class AppMonitorService : Service() {
 
         // Loop 3: collect locked apps
         serviceScope.launch {
-            while (isActive) {
-                try {
-                    appRepository.getLockedApps().collect { lockedApps ->
-                        cachedLockedApps = lockedApps.map { it.packageName }.toSet()
-                        Log.d(TAG, "cachedLockedApps: $cachedLockedApps")
-                    }
-                } catch (e: CancellationException) {
-                    Log.w(TAG, "LockedApps flow cancelled", e)
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Error in locked apps flow", t)
-                    delay(1000)
-                }
+
+            appRepository.getLockedApps().collect { lockedApps ->
+                cachedLockedApps = lockedApps.map { it.packageName }.toSet()
+                Log.d(TAG, "cachedLockedApps: $cachedLockedApps")
             }
         }
     }
@@ -228,8 +205,6 @@ class AppMonitorService : Service() {
     }
 
     private fun stopMonitoring() {
-        monitoringJob?.cancel()
-        monitoringJob = null
         Log.d(TAG, "Monitoring stopped")
     }
 
@@ -245,10 +220,11 @@ class AppMonitorService : Service() {
             val event = UsageEvents.Event()
             while (usageEvents.hasNextEvent()) {
                 usageEvents.getNextEvent(event)
-
-                if (isRelevantUsageEvent(event) && event.timeStamp > lastEventTime) {
-                    lastEventTime = event.timeStamp
-                    lastAppPackage = event.packageName ?: ""
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    if (isRelevantUsageEvent(event) && event.timeStamp > lastEventTime) {
+                        lastEventTime = event.timeStamp
+                        lastAppPackage = event.packageName ?: ""
+                    }
                 }
             }
 
@@ -267,14 +243,8 @@ class AppMonitorService : Service() {
 
     private fun getForegroundAppFallback(): String {
         return try {
-            when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {
-                    getForegroundAppFromUsageStats()
-                }
-
-                else -> {
-                    getForegroundAppFromActivityManager()
-                }
+            run {
+                getForegroundAppFromUsageStats()
             }
         } catch (e: SecurityException) {
             Log.e(TAG, "Permission denied for foreground app detection", e)
@@ -418,8 +388,9 @@ class AppMonitorService : Service() {
             }
             cleanupOverlayResources()
 //
-
-                isOverlayShowing = false
+            serviceScope.launch {
+              mutex.withLock {    isOverlayShowing = false}
+            }
 
         } catch (e: Exception) {
             Log.e(TAG, "Error removing overlay", e)
@@ -441,21 +412,19 @@ class AppMonitorService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "App Lock Protection",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Dịch vụ bảo vệ ứng dụng đang hoạt động"
-                setShowBadge(false)
-                setSound(null, null)
-                enableVibration(false)
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "App Lock Protection",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Dịch vụ bảo vệ ứng dụng đang hoạt động"
+            setShowBadge(false)
+            setSound(null, null)
+            enableVibration(false)
         }
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager?.createNotificationChannel(channel)
     }
 
     private fun createNotification(): Notification {
@@ -514,7 +483,6 @@ class AppMonitorService : Service() {
         // start service again if needed
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
 

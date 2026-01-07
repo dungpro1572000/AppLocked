@@ -12,4 +12,7 @@ interface TempLockedAppDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTempLockedApp(tempLockedApp: com.dungz.applocker.data.model.TempLockedApp)
+
+    @Query("delete from temp_locked_apps")
+    suspend fun deleteTempLockedApp()
 }

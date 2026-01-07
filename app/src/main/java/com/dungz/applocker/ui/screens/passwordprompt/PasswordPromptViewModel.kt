@@ -65,8 +65,8 @@ class PasswordPromptViewModel @Inject constructor(
 
     fun scheduleEmergencyUnlock() {
         viewModelScope.launch(Dispatchers.IO) {
-            appRepository.unlockAllApps()
             appRepository.scheduleEmergencyUnlock()
+            appRepository.unlockAllApps()
         }
     }
 }

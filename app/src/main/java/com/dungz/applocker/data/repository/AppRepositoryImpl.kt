@@ -15,6 +15,7 @@ import com.dungz.applocker.data.model.SecuritySettings
 import com.dungz.applocker.data.model.TempLockedApp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -95,7 +96,7 @@ class AppRepositoryImpl @Inject constructor(
     }
 
     override suspend fun unlockAllApps() {
-        lockedAppDao.unlockAllApps()
+        lockedAppDao.unlockAllAppsIn24Hour()
     }
 
     override suspend fun getSecuritySettings(): SecuritySettings {
@@ -162,11 +163,21 @@ class AppRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun scheduleEmergencyUnlock() {
+    override suspend fun scheduleEmergencyUnlock() {
+        val lockedApp = getLockedApps().first().map {
+            TempLockedApp(it.appName, it.packageName)
+        }
+        insertTempLockedApp(lockedApp)
         WorkManager.getInstance(context).enqueueUniqueWork(
             "EmergencyUnlockWorker",
             androidx.work.ExistingWorkPolicy.REPLACE,
             com.dungz.applocker.worker.EmergencyUnlockWorker.worker
         )
+    }
+
+    override suspend fun clearAllData() {
+        dataStore.deleteDataStore()
+        lockedAppDao.deleteAllLockedApps()
+        tempLockedAppDao.deleteTempLockedApp()
     }
 } 

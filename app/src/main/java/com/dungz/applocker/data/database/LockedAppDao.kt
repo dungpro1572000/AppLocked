@@ -31,5 +31,5 @@ interface LockedAppDao {
     suspend fun deleteAllLockedApps()
 
     @Query("UPDATE locked_apps SET isLocked = 0 WHERE isLocked = 1")
-    suspend fun unlockAllApps()
+    suspend fun unlockAllAppsIn24Hour()
 } 

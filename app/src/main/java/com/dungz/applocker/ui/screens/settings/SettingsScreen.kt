@@ -158,7 +158,7 @@ fun SettingsScreen(
                             subtitle = context.packageManager.getPackageInfo(
                                 context.packageName,
                                 0
-                            ).versionName ?: "1.0.0"
+                            ).versionName?:""
                         )
 
                         SettingsItem(

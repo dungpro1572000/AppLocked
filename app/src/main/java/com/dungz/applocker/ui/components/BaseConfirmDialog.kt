@@ -1,6 +1,7 @@
 package com.dungz.applocker.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -10,8 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import com.dungz.applocker.ui.theme.textSubTitleStyle
 import com.dungz.applocker.ui.theme.textTitleStyle
 
 @Composable
@@ -27,9 +28,10 @@ fun <T, R> BaseConfirmDialog(
     val data = remember { mutableStateOf(initValue) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
         properties = DialogProperties(
             dismissOnClickOutside = true,
-            usePlatformDefaultWidth = true,
+            usePlatformDefaultWidth = false,
         ),
         title = {
             Text(

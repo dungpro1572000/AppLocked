@@ -24,5 +24,6 @@ interface AppRepository {
     suspend fun shouldTakePhoto(): Boolean
     suspend fun getTempLockedApps(): List<TempLockedApp>
     suspend fun insertTempLockedApp(tempLockedApps: List<TempLockedApp>)
-    fun scheduleEmergencyUnlock()
+    suspend fun scheduleEmergencyUnlock()
+    suspend fun clearAllData()
 } 

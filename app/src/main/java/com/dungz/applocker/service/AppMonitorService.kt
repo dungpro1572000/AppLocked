@@ -284,17 +284,18 @@ class AppMonitorService : Service() {
     private fun hideOverlay() {
         try {
             overlayView?.let { view ->
-                windowManager?.removeView(view)
+                if (view.parent != null) {
+                    windowManager?.removeView(view)
+                }
                 Log.d(TAG, "Overlay hidden successfully")
             }
             cleanupOverlayResources()
-            serviceScope.launch {
-                mutex.withLock { isOverlayShowing = false }
-            }
-            // ép tick sau khi đóng overlay để nhận app mới ngay
+            isOverlayShowing = false
+            // Reset to detect app changes immediately
             lastAppPackage = ""
         } catch (e: Exception) {
             Log.e(TAG, "Error hiding overlay", e)
+            isOverlayShowing = false
         }
     }
 
@@ -383,17 +384,17 @@ class AppMonitorService : Service() {
     private fun removeLockOverlay() {
         try {
             overlayView?.let { view ->
-                windowManager?.removeView(view)
+                if (view.parent != null) {
+                    windowManager?.removeView(view)
+                }
                 Log.d(TAG, "Lock overlay removed successfully")
             }
             cleanupOverlayResources()
-//
-            serviceScope.launch {
-              mutex.withLock {    isOverlayShowing = false}
-            }
-
+            isOverlayShowing = false
+            lastAppPackage = ""
         } catch (e: Exception) {
             Log.e(TAG, "Error removing overlay", e)
+            isOverlayShowing = false
         }
     }
 
@@ -449,18 +450,7 @@ class AppMonitorService : Service() {
     }
 
     private fun getLockedAppsCount(): Int {
-        return try {
-            cachedLockedApps.size.takeIf { it > 0 } ?: run {
-                // Fallback to SharedPreferences if cache is empty
-                val sharedPrefs = getSharedPreferences("app_lock_prefs", MODE_PRIVATE)
-                val lockedApps =
-                    sharedPrefs.getStringSet("locked_apps", emptySet()) ?: emptySet()
-                lockedApps.size
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error getting locked apps count", e)
-            0
-        }
+        return cachedLockedApps.size
     }
 
     override fun onDestroy() {

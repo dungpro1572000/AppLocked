@@ -13,6 +13,7 @@ import com.dungz.applocker.data.model.AppInfo
 import com.dungz.applocker.data.model.LockedApp
 import com.dungz.applocker.data.model.SecuritySettings
 import com.dungz.applocker.data.model.TempLockedApp
+import com.dungz.applocker.util.PasswordHasher
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -114,12 +115,24 @@ class AppRepositoryImpl @Inject constructor(
 
     override suspend fun validatePassword(password: String): Boolean {
         val settings = getSecuritySettings()
-        return settings.password == password
+        val isValid = PasswordHasher.verifyPassword(password, settings.password)
+        // Migrate legacy plain text password to hashed version on successful login
+        if (isValid && !PasswordHasher.isHashed(settings.password)) {
+            val hashedSettings = settings.copy(password = PasswordHasher.hashPassword(password))
+            saveSecuritySettings(hashedSettings)
+        }
+        return isValid
     }
 
     override suspend fun validateEmergencyPassword(password: String): Boolean {
         val settings = getSecuritySettings()
-        return settings.emergencyPassword == password
+        val isValid = PasswordHasher.verifyPassword(password, settings.emergencyPassword)
+        // Migrate legacy plain text password to hashed version on successful login
+        if (isValid && !PasswordHasher.isHashed(settings.emergencyPassword)) {
+            val hashedSettings = settings.copy(emergencyPassword = PasswordHasher.hashPassword(password))
+            saveSecuritySettings(hashedSettings)
+        }
+        return isValid
     }
 
     override suspend fun setEmergencyUnlock() {

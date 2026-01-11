@@ -3,6 +3,7 @@ package com.dungz.applocker.ui.screens.passwordsetup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
+import com.dungz.applocker.util.PasswordHasher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,13 +20,13 @@ class PasswordSetUpViewModel @Inject constructor(val appRepository: AppRepositor
     fun onSetUpPassword() {
         viewModelScope.launch(Dispatchers.IO) {
             val currentSecuritySettings = appRepository.getSecuritySettings()
+            val hashedPassword = PasswordHasher.hashPassword(_state.value.password)
             val newSecurity = currentSecuritySettings.copy(
                 isPasswordSet = true,
-                password = _state.value.password
+                password = hashedPassword
             )
             appRepository.saveSecuritySettings(newSecurity)
         }
-
     }
 
     fun updatePassword(password: String) {

@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
+import com.dungz.applocker.util.PasswordHasher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,14 +23,14 @@ class SettingViewModel @Inject constructor(private val appRepository: AppReposit
             _state.value = _state.value.copy(
                 securitySettings = settings,
             )
-            Log.d("Settings", "Initialized with: $settings")
         }
     }
 
     fun updatePassword(password: String) {
         viewModelScope.launch(Dispatchers.IO) {
+            val hashedPassword = PasswordHasher.hashPassword(password)
             val settings = _state.value.securitySettings.copy(
-                password = password,
+                password = hashedPassword,
                 isPasswordSet = true
             )
             appRepository.saveSecuritySettings(settings)

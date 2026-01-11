@@ -1,8 +1,6 @@
 package com.dungz.applocker.ui.screens.appselection
 
-import android.graphics.Bitmap
 import androidx.compose.ui.graphics.ImageBitmap
-import com.dungz.applocker.data.model.AppInfo
 
 data class AppSelectionState(
     val searchApp: String = "",
@@ -10,7 +8,9 @@ data class AppSelectionState(
     val isShowSystemWindowAlertPermissionDialog: Boolean = false,
     val isShowUsageStatsPermissionDialog: Boolean = false,
     val isShowDenyPermissionDialog: Boolean = false,
+    val isLoading: Boolean = true,
     val listLockedApp: List<AppSelectionInfo> = emptyList(),
+    val filteredApps: List<AppSelectionInfo> = emptyList(),
     val listApp: List<AppSelectionInfo> = emptyList()
 )
 

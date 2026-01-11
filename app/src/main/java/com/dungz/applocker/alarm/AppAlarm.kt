@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.SystemClock
 import com.dungz.applocker.data.repository.AppRepository
 import com.dungz.applocker.service.AppMonitorService
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -13,11 +14,12 @@ class AppAlarm @Inject constructor(
     private val appRepository: AppRepository,
     @ApplicationContext private val context: Context,
 ) {
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
     suspend fun setAlarmForOpenLockedApps(
         appName: String,
         packageName: String,
-        timeTrigger: Int,
+        timeTriggerMinutes: Int,
     ) {
         appRepository.unlockApp(packageName)
         val intent = Intent(context, AppMonitorService::class.java).apply {
@@ -26,18 +28,22 @@ class AppAlarm @Inject constructor(
             putExtra(PACKAGE_NAME_EXTRA, packageName)
         }
 
+        // Use unique request code based on package name hash to support multiple alarms
+        val requestCode = packageName.hashCode()
         val pendingIntent = PendingIntent.getService(
             context,
-            0,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        // ELAPSED_REALTIME requires time since boot, so add current elapsed time
+        val triggerAtMillis = SystemClock.elapsedRealtime() + (timeTriggerMinutes * 60 * 1000L)
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            (timeTrigger * 1000 * 60).toLong(), // Convert minutes to milliseconds
+            triggerAtMillis,
             pendingIntent
         )
-
     }
 
     companion object {

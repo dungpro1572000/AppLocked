@@ -9,6 +9,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -29,13 +30,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Timelapse
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,11 +44,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,8 +66,6 @@ import com.dungz.applocker.ui.theme.Dimen
 import com.dungz.applocker.ui.theme.textNormalStyle
 import com.dungz.applocker.ui.theme.textSubTitleStyle
 import com.dungz.applocker.ui.theme.textTitleStyle
-import com.dungz.applocker.util.GlobalSnackbar
-import kotlinx.coroutines.launch
 
 @Composable
 fun AppSelectionScreen(
@@ -113,18 +110,8 @@ fun AppSelectionScreen(
     var selectedAppForTimeUnlock by remember { mutableStateOf<AppSelectionInfo?>(null) }
     var numberInput by remember { mutableStateOf("") }
 
-    val filteredApps =
-        remember(state.value.listLockedApp, state.value.searchApp, state.value.isShowSystemApp) {
-            derivedStateOf {
-                state.value.listLockedApp.filter { app ->
-                    val matchesSearch =
-                        app.appName.contains(state.value.searchApp, ignoreCase = true) ||
-                                app.packageName.contains(state.value.searchApp, ignoreCase = true)
-                    val matchesSystemFilter = state.value.isShowSystemApp || !app.isSystemApp
-                    matchesSearch && matchesSystemFilter
-                }
-            }
-        }
+    // Use pre-filtered apps from ViewModel to avoid filtering on Main Thread
+    val filteredApps = state.value.filteredApps
 
     if (state.value.isShowDenyPermissionDialog) {
         DismissPermissionDialog(
@@ -196,7 +183,7 @@ fun AppSelectionScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Apps (${filteredApps.value.size})",
+                        text = "Apps (${filteredApps.size})",
                         style = textTitleStyle
                     )
 
@@ -216,27 +203,36 @@ fun AppSelectionScreen(
                 }
             }
 
-            // Apps list
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(Dimen.paddingMedium)
-            ) {
-                items(items = filteredApps.value, key = { it.packageName }) { app ->
-                    AppItem(
-                        app = app,
-                        onToggleLock = {
-                            viewModel.toggleAppLock(
-                                app.isLocked,
-                                app.packageName,
-                                app.appName
-                            )
-                        },
-                        onTimeUnLock = { selectedApp ->
-                            selectedAppForTimeUnlock = selectedApp
-                            numberInput = ""
-                            showTimeUnlockDialog = true
-                        }
-                    )
+            // Apps list with loading indicator
+            if (state.value.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(Dimen.paddingMedium)
+                ) {
+                    items(items = filteredApps, key = { it.packageName }) { app ->
+                        AppItem(
+                            app = app,
+                            onToggleLock = {
+                                viewModel.toggleAppLock(
+                                    app.isLocked,
+                                    app.packageName,
+                                    app.appName
+                                )
+                            },
+                            onTimeUnLock = { selectedApp ->
+                                selectedAppForTimeUnlock = selectedApp
+                                numberInput = ""
+                                showTimeUnlockDialog = true
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -265,7 +261,8 @@ fun AppSelectionScreen(
             confirmButton = {
                 TextButton(onClick = {
                     selectedAppForTimeUnlock?.let {
-                        viewModel.toggleAppUnlockTimer(it.packageName, it.appName)
+                        val duration = numberInput.toIntOrNull() ?: 0
+                        viewModel.toggleAppUnlockTimer(it.packageName, it.appName, duration)
                     }
                     showTimeUnlockDialog = false
                 }) {

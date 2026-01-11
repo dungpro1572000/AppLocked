@@ -3,6 +3,7 @@ package com.dungz.applocker.ui.screens.emergencypasswordsetup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dungz.applocker.data.repository.AppRepository
+import com.dungz.applocker.util.PasswordHasher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -37,12 +38,11 @@ class EmergencyPasswordViewModel @Inject constructor(private val appRepository: 
     }
 
     fun updateEmergencyPassword() {
-        // Logic to update the emergency password in the repository
-        // This could involve saving the password securely
-        viewModelScope.launch (Dispatchers.IO){
+        viewModelScope.launch(Dispatchers.IO) {
             val currentSettings = appRepository.getSecuritySettings()
+            val hashedPassword = PasswordHasher.hashPassword(_state.value.password)
             val updatedSettings = currentSettings.copy(
-                emergencyPassword = _state.value.password,
+                emergencyPassword = hashedPassword,
                 isEmergencyPasswordSet = true
             )
             appRepository.saveSecuritySettings(updatedSettings)

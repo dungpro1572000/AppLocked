@@ -62,6 +62,11 @@ class AppMonitorService : Service() {
     private var lastCheckTime = 0L
     private var isOverlayShowing = false
 
+    // Track apps that user has unlocked in current session
+    // App will be removed from this set when it leaves foreground
+    private val unlockedAppsInSession = mutableSetOf<String>()
+    private var currentLockedApp = ""
+
     // UI components
     private var windowManager: WindowManager? = null
     private var overlayView: ComposeView? = null
@@ -171,8 +176,9 @@ class AppMonitorService : Service() {
             val currentApp = getCurrentForegroundApp()
 
             if (currentApp.isNotEmpty() && currentApp != lastAppPackage) {
+                val previousApp = lastAppPackage
                 lastAppPackage = currentApp
-                handleAppChange(currentApp)
+                handleAppChange(currentApp, previousApp)
             }
 
             Log.d(TAG, "Current app: $currentApp")
@@ -181,22 +187,35 @@ class AppMonitorService : Service() {
         }
     }
 
-    private suspend fun handleAppChange(packageName: String) {
+    private suspend fun handleAppChange(packageName: String, previousApp: String) {
         // Skip if it's our own app
         if (packageName == this.packageName) {
             return
         }
 
-        val shouldShowOverlay = cachedLockedApps.contains(packageName)
-
         mutex.withLock {
+            // When user switches to a different app, remove previous app from unlocked session
+            // So next time user opens it, they need to enter password again
+            if (previousApp.isNotEmpty() && previousApp != packageName) {
+                unlockedAppsInSession.remove(previousApp)
+                Log.d(TAG, "Removed $previousApp from unlocked session")
+            }
+
+            val isLocked = cachedLockedApps.contains(packageName)
+            val isUnlockedInSession = unlockedAppsInSession.contains(packageName)
+
+            // Only show overlay if app is locked AND not already unlocked in this session
+            val shouldShowOverlay = isLocked && !isUnlockedInSession
+
             if (shouldShowOverlay && !isOverlayShowing) {
+                currentLockedApp = packageName
                 isOverlayShowing = true
                 withContext(Dispatchers.Main) {
                     showLockScreen(packageName)
                 }
             } else if (!shouldShowOverlay && isOverlayShowing) {
                 isOverlayShowing = false
+                currentLockedApp = ""
                 withContext(Dispatchers.Main) {
                     hideOverlay()
                 }
@@ -291,8 +310,7 @@ class AppMonitorService : Service() {
             }
             cleanupOverlayResources()
             isOverlayShowing = false
-            // Reset to detect app changes immediately
-            lastAppPackage = ""
+            currentLockedApp = ""
         } catch (e: Exception) {
             Log.e(TAG, "Error hiding overlay", e)
             isOverlayShowing = false
@@ -389,9 +407,17 @@ class AppMonitorService : Service() {
                 }
                 Log.d(TAG, "Lock overlay removed successfully")
             }
+
+            // Add current app to unlocked session so it won't show lock screen again
+            // until user switches to another app
+            if (currentLockedApp.isNotEmpty()) {
+                unlockedAppsInSession.add(currentLockedApp)
+                Log.d(TAG, "Added $currentLockedApp to unlocked session")
+            }
+
             cleanupOverlayResources()
             isOverlayShowing = false
-            lastAppPackage = ""
+            currentLockedApp = ""
         } catch (e: Exception) {
             Log.e(TAG, "Error removing overlay", e)
             isOverlayShowing = false

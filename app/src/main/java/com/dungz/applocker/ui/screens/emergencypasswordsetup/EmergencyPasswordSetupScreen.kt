@@ -29,7 +29,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.dungz.applocker.ui.navigation.Screen
 import com.dungz.applocker.ui.theme.Dimen
 import com.dungz.applocker.ui.theme.textErrorStyle
 import com.dungz.applocker.ui.theme.textNormalStyle
@@ -164,9 +163,7 @@ fun EmergencyPasswordSetupScreen(
 
                         else -> {
                             viewModel.updateEmergencyPassword()
-                            navController.navigate(Screen.AppSelection.route) {
-                                popUpTo(Screen.EmergencyPasswordSetup.route) { inclusive = true }
-                            }
+                            navController.popBackStack()
                         }
                     }
                 },
@@ -178,9 +175,7 @@ fun EmergencyPasswordSetupScreen(
 
             OutlinedButton(
                 onClick = {
-                    navController.navigate(Screen.AppSelection.route) {
-                        popUpTo(Screen.EmergencyPasswordSetup.route) { inclusive = true }
-                    }
+                    navController.popBackStack()
                 },
                 modifier = Modifier.weight(1f)
             ) {

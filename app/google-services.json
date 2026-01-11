@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "556576075088",
+    "project_id": "app-e1eae",
+    "storage_bucket": "app-e1eae.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556576075088:android:3ce2e3067c1efa34b79055",
+        "android_client_info": {
+          "package_name": "com.dungz.applocker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKkl5AitqfrgAAOAg_v4eCmt0YqQcTmN0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

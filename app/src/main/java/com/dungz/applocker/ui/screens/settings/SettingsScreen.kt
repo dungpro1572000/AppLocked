@@ -229,16 +229,11 @@ fun SettingsScreen(
         }
     }
 
-    if (uiState.value.isShowEmergencyPasswordDialog) {
-        navController.navigate(Screen.EmergencyPasswordSetup.route)
-//        SetEmergencyPasswordDialog(
-//            onDismiss = { viewModel.updateShowEmergencyPasswordDialog() },
-//            onConfirm = { emergencyPassword ->
-//                GlobalSnackbar.setMessage("Emergency password set.")
-//                viewModel.updateEmergencyPassword(emergencyPassword)
-//                viewModel.updateShowEmergencyPasswordDialog()
-//            }
-//        )
+    LaunchedEffect(uiState.value.isShowEmergencyPasswordDialog) {
+        if (uiState.value.isShowEmergencyPasswordDialog) {
+            viewModel.updateShowEmergencyPasswordDialog()
+            navController.navigate(Screen.EmergencyPasswordSetup.route)
+        }
     }
     if (uiState.value.isShowClearAllDataDialog) {
         ClearAllDataDialog(onDismiss = { viewModel.updateShowClearAllDataDialog() }) {
